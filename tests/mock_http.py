@@ -5,15 +5,15 @@ class MockHttp(httplib2.Http):
     self.responses = {}
     self.requests = {}
 
-  def register_response(self, method, uri, headers, body):
-    self.responses[(method.lower(), uri)] = (headers, body)
+  def register(self, method, uri, body = '', response = httplib2.Response({})):
+    self.responses[(method.lower(), uri)] = (response, body)
 
   def request(self, uri, method, body=None, headers={}):
     self.requests[(method.lower(), uri)] = (headers, body)
     if self.responses.has_key( (method.lower(), uri) ):
-      return self.responses[(method, uri)]
+      return self.responses[(method.lower(), uri)]
     else:
-      return ({}, '')
+      return (httplib2.Response({}), '')
 
   def received_request(self, method, uri):
     return self.requests.has_key( (method.lower(), uri) )

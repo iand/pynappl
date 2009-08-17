@@ -18,12 +18,8 @@ class Store:
 
     def store_data(self, data, graph_name=None):
       """Store some RDF in the Metabox associated with this store. Default is to store the
-         data in the metabox, but a private graph name can also be specified.
-    
-         data:: a String containing the data to store
-         graph_name:: name of a private graph in which to store the data. E.g. "1" or "private". Resolves to /meta/graphs/graph_name
-      """
-    
+         data in the metabox, but a private graph name can also be specified."""    
+
       req_uri = None
       if graph_name is None:
         req_uri = self.build_uri("/meta")
@@ -100,5 +96,8 @@ class Store:
       
     def read_job(self, uri):
       (response, body) = self.client.request(uri, "GET", headers={"accept" : "application/rdf+xml"})
-      # TODO: check result is OK, then pass to Job.Parse
+      if response.status > 299:
+        raise "Unable to read job from store. Response was %s %s " % (response.status, response.reason) 
+
+      return pynappl.Job.parse(uri, body)
       
