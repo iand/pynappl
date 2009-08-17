@@ -41,11 +41,11 @@ class Job:
 		store: store from which the job will be read"""
 		
 		headers, data = store.get_job(uri)
-		if headers["status"] != 200
+		if headers["status"] != 200:
 			raise "Unable to read job from store. Response code was %s" % headers["status"]
 		return self.parse(uri, resp.content)
 	
-	def parse(uri, xml)
+	def parse(uri, xml):
 		"""Parses job metadata returned from the platform as RDF/XML, creating a fully populated
 		Job instance
 		
