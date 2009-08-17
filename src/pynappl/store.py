@@ -62,6 +62,10 @@ class Store:
       return self.client.request(req_uri, "GET", headers={"accept" : "application/rdf+xml"})
 
     def schedule_job(self, type, time, label, snapshot_uri = None):
+      if time is None:
+        time = dt.datetime.utcnow()
+      if label is None:
+        label = ''
       g = rdflib.ConjunctiveGraph();
       
       s = rdflib.URIRef('')

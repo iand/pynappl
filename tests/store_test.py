@@ -66,25 +66,28 @@ class ScheduleJobTestCase(unittest.TestCase):
     g.parse(StringIO(body), format="xml")
     return g
 
+  def do_schedule(self, store, time=None, label=None):
+    pass
+
   def post_job_and_get_graph(self):
     (client, headers, body) = self.submit_job();
     return self.parse_job_request(body)
 
-  def test_schedule_reset_posts_to_job_queue_uri(self):
+  def test_schedule_job_posts_to_job_queue_uri(self):
     (client, headers, body) = self.submit_job()
     self.assertTrue(client.received_request('post', 'http://example.com/store/jobs'))
 
-  def test_schedule_reset_sets_content_type(self):
+  def test_schedule_job_sets_content_type(self):
     (client, headers, body) = self.submit_job()
     self.assertTrue(headers.has_key('content-type'))
     self.assertEqual('application/rdf+xml', headers['content-type'])
 
-  def test_schedule_reset_sets_accept(self):
+  def test_schedule_job_sets_accept(self):
     (client, headers, body) = self.submit_job()
     self.assertTrue(headers.has_key('accept'))
     self.assertEqual('*/*', headers['accept'])
     
-  def test_schedule_reset_posts_rdfxml_where_triples_all_have_same_subject(self):
+  def test_schedule_job_posts_rdfxml_where_triples_all_have_same_subject(self):
     g = self.post_job_and_get_graph()
     subj = None
     for s in g.subjects():
@@ -94,39 +97,39 @@ class ScheduleJobTestCase(unittest.TestCase):
       else:
         self.assertEqual(subj, s)
 
-  def test_schedule_reset_posts_rdfxml_with_a_single_jobtype(self):
+  def test_schedule_job_posts_rdfxml_with_a_single_jobtype(self):
     g = self.post_job_and_get_graph()
     objects = list(g.objects(subject = None, predicate = rdflib.URIRef('http://schemas.talis.com/2006/bigfoot/configuration#jobType')))
     self.assertEqual(1, len(objects))
 
-  def test_schedule_reset_posts_rdfxml_with_a_single_start_time(self):
+  def test_schedule_job_rdfxml_with_a_single_start_time(self):
     g = self.post_job_and_get_graph()
     objects = list(g.objects(subject = None, predicate = rdflib.URIRef('http://schemas.talis.com/2006/bigfoot/configuration#startTime')))
     self.assertEqual(1, len(objects))
 
-  def test_schedule_reset_posts_rdfxml_with_a_type_of_job_request(self):
+  def test_schedule_job_rdfxml_with_a_type_of_job_request(self):
     g = self.post_job_and_get_graph()
     objects = list(g.objects(subject = None, predicate = rdflib.URIRef('http://www.w3.org/1999/02/22-rdf-syntax-ns#type')))
     self.assertEqual(1, len(objects))
     self.assertEqual('http://schemas.talis.com/2006/bigfoot/configuration#JobRequest', str(objects[0]))
 
 
-
-class ScheduleResetTestCase(ScheduleJobTestCase):
-
-  def do_schedule(self, store):
-    return store.schedule_reset()
-
-  def test_schedule_reset_data_posts_rdfxml_with_a_job_type_of_reset_data_job(self):
-    g = self.post_job_and_get_graph()
-    objects = list(g.objects(subject = None, predicate = rdflib.URIRef('http://schemas.talis.com/2006/bigfoot/configuration#jobType')))
-    self.assertEqual(1, len(objects))
-    self.assertEqual('http://schemas.talis.com/2006/bigfoot/configuration#ResetDataJob', str(objects[0]))
-
-  def test_schedule_reset_data_posts_rdfxml_with_supplied_start_time(self):
+  def test_schedule_job_posts_rdfxml_with_supplied_label(self):
     client = MockHttp()
     store = pynappl.Store('http://example.com/store', client=client)
-    resp = store.schedule_reset(time=dt.datetime(2008, 7, 6, 5, 4, 3))
+    resp = self.do_schedule(store, label='My job')
+    (headers, body) = client.get_request('post', 'http://example.com/store/jobs')
+
+    g = self.parse_job_request(body)
+    
+    objects = list(g.objects(subject = None, predicate = rdflib.URIRef('http://www.w3.org/2000/01/rdf-schema#label')))
+    self.assertEqual(1, len(objects))
+    self.assertEqual('My job', str(objects[0]))
+
+  def test_schedule_job_posts_rdfxml_with_supplied_start_time(self):
+    client = MockHttp()
+    store = pynappl.Store('http://example.com/store', client=client)
+    resp = self.do_schedule(store, time=dt.datetime(2008, 7, 6, 5, 4, 3))
     (headers, body) = client.get_request('post', 'http://example.com/store/jobs')
 
     g = self.parse_job_request(body)
@@ -136,25 +139,20 @@ class ScheduleResetTestCase(ScheduleJobTestCase):
     self.assertEqual('2008-07-06T05:04:03Z', str(objects[0]))
 
 
-  def test_schedule_reset_data_posts_rdfxml_with_supplied_label(self):
-    client = MockHttp()
-    store = pynappl.Store('http://example.com/store', client=client)
-    resp = store.schedule_reset(label='My job')
-    (headers, body) = client.get_request('post', 'http://example.com/store/jobs')
+class ScheduleResetTestCase(ScheduleJobTestCase):
 
-    g = self.parse_job_request(body)
-    
-    objects = list(g.objects(subject = None, predicate = rdflib.URIRef('http://www.w3.org/2000/01/rdf-schema#label')))
+  def do_schedule(self, store, time=None, label=None):
+    return store.schedule_reset(time, label)
+
+  def test_schedule_reset_data_posts_rdfxml_with_a_job_type_of_reset_data_job(self):
+    g = self.post_job_and_get_graph()
+    objects = list(g.objects(subject = None, predicate = rdflib.URIRef('http://schemas.talis.com/2006/bigfoot/configuration#jobType')))
     self.assertEqual(1, len(objects))
-    self.assertEqual('My job', str(objects[0]))
+    self.assertEqual('http://schemas.talis.com/2006/bigfoot/configuration#ResetDataJob', str(objects[0]))
 
- 
- 
 class ScheduleSnapshotTestCase(ScheduleJobTestCase):
-  def do_schedule(self, store):
-    return store.schedule_snapshot()
- 
-
+  def do_schedule(self, store, time=None, label=None):
+    return store.schedule_snapshot(time, label)
 
   def test_schedule_reset_data_posts_rdfxml_with_a_job_type_of_snapshot_job(self):
     g = self.post_job_and_get_graph()
@@ -164,8 +162,8 @@ class ScheduleSnapshotTestCase(ScheduleJobTestCase):
 
 
 class ScheduleReindexTestCase(ScheduleJobTestCase):
-  def do_schedule(self, store):
-    return store.schedule_reindex()
+  def do_schedule(self, store, time=None, label=None):
+    return store.schedule_reindex(time, label)
 
   def test_schedule_reindex_posts_rdfxml_with_a_job_type_of_snapshot_job(self):
     g = self.post_job_and_get_graph()
@@ -174,8 +172,8 @@ class ScheduleReindexTestCase(ScheduleJobTestCase):
     self.assertEqual('http://schemas.talis.com/2006/bigfoot/configuration#ReindexJob', str(objects[0]))
 
 class ScheduleRestoreTestCase(ScheduleJobTestCase):
-  def do_schedule(self, store):
-    return store.schedule_restore('http://example.com/snapshot')
+  def do_schedule(self, store, time=None, label=None):
+    return store.schedule_restore('http://example.com/snapshot', time, label)
 
   def test_schedule_reindex_posts_rdfxml_with_a_job_type_of_snapshot_job(self):
     g = self.post_job_and_get_graph()
