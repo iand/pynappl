@@ -19,15 +19,13 @@ class Store:
          graph_name:: name of a private graph in which to store the data. E.g. "1" or "private". Resolves to /meta/graphs/graph_name
       """
     
-      uri = None
+      req_uri = None
       if graph_name is None:
-        uri = build_uri("/meta")
+        req_uri = self.build_uri("/meta")
       else:
-        uri = build_uri("/meta/graphs/%s" % graph_name)  
+        req_uri = self.build_uri("/meta/graphs/%s" % graph_name)  
       
-      # TODO
-      #response = @client.post(u, data, RDF_XML )
-      #return response
+      return self.client.request(req_uri, "POST", body=data, headers={"accept" : "*/*", 'content-type':'application/rdf+xml'})
     
     def store_file(self, file, graph_name=None):
       """Store the contents of a File (or any IO stream) in the Metabox associated with this store

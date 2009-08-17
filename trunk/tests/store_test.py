@@ -3,6 +3,10 @@ import pynappl
 import urllib
 from mock_http import MockHttp
 
+SINGLE_TRIPLE = '<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:foaf="http://xmlns.com/foaf/0.1/"><rdf:Description><foaf:name>scooby</foaf:name></rdf:Description></rdf:RDF>';
+
+
+
 class BuildUriTestCase(unittest.TestCase):
 
   def test_build_uri_abs(self):
@@ -72,7 +76,54 @@ class ScheduleResetTestCase(unittest.TestCase):
     self.assertEqual('*/*', headers['accept'])
   
 
+class StoreDataTestCase(unittest.TestCase):
+  def test_store_data_without_graph_posts_to_metabox(self):
+    client = MockHttp()
+    store = pynappl.Store('http://example.com/store', client=client)
+    resp = store.store_data(SINGLE_TRIPLE)
+    self.assertTrue(client.received_request('post', 'http://example.com/store/meta'))
 
+  def test_store_data_without_graph_sets_content_type(self):
+    client = MockHttp()
+    store = pynappl.Store('http://example.com/store', client=client)
+    resp = store.store_data(SINGLE_TRIPLE)
+
+    (headers, body) = client.get_request('post', 'http://example.com/store/meta')
+    self.assertTrue(headers.has_key('content-type'))
+    self.assertEqual('application/rdf+xml', headers['content-type'])
+
+  def test_store_data_without_graph_sets_accept(self):
+    client = MockHttp()
+    store = pynappl.Store('http://example.com/store', client=client)
+    resp = store.store_data(SINGLE_TRIPLE)
+
+    (headers, body) = client.get_request('post', 'http://example.com/store/meta')
+    self.assertTrue(headers.has_key('accept'))
+    self.assertEqual('*/*', headers['accept'])
+
+  def test_store_data_with_graph_posts_to_graph(self):
+    client = MockHttp()
+    store = pynappl.Store('http://example.com/store', client=client)
+    resp = store.store_data(SINGLE_TRIPLE, 'foo')
+    self.assertTrue(client.received_request('post', 'http://example.com/store/meta/graphs/foo'))
+
+  def test_store_data_with_graph_sets_content_type(self):
+    client = MockHttp()
+    store = pynappl.Store('http://example.com/store', client=client)
+    resp = store.store_data(SINGLE_TRIPLE, 'foo')
+
+    (headers, body) = client.get_request('post', 'http://example.com/store/meta/graphs/foo')
+    self.assertTrue(headers.has_key('content-type'))
+    self.assertEqual('application/rdf+xml', headers['content-type'])
+
+  def test_store_data_with_graph_sets_accept(self):
+    client = MockHttp()
+    store = pynappl.Store('http://example.com/store', client=client)
+    resp = store.store_data(SINGLE_TRIPLE, 'foo')
+
+    (headers, body) = client.get_request('post', 'http://example.com/store/meta/graphs/foo')
+    self.assertTrue(headers.has_key('accept'))
+    self.assertEqual('*/*', headers['accept'])
 
 if __name__ == "__main__":
     unittest.main()
