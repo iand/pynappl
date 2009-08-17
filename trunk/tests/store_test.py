@@ -1,6 +1,7 @@
 import unittest
 import pynappl
 import urllib
+import httplib2
 import rdflib
 import datetime as dt
 import tempfile
@@ -11,6 +12,27 @@ from StringIO import StringIO
 from mock_http import MockHttp
 
 SINGLE_TRIPLE = '<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:foaf="http://xmlns.com/foaf/0.1/"><rdf:Description><foaf:name>scooby</foaf:name></rdf:Description></rdf:RDF>'
+JOB_URI = "http://example.com/store/jobs/a193f791-b29e-4802-b54e-0d8587d747b3"
+JOB_DATA = """<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:j.0="http://purl.org/dc/terms/" xmlns:j.1="http://schemas.talis.com/2006/bigfoot/configuration#" xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#"> 
+  <rdf:Description rdf:about="http://example.com/store/jobs/a193f791-b29e-4802-b54e-0d8587d747b3/767238a2-7309-424c-ab20-a40fb457c042">
+    <j.1:progressUpdateTime rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2009-08-12T01:19:12Z</j.1:progressUpdateTime>
+    <j.1:progressUpdateMessage>Reset Data job running for store.</j.1:progressUpdateMessage>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://example.com/store/jobs/a193f791-b29e-4802-b54e-0d8587d747b3">
+    <j.1:startTime rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2007-05-02T14:14:00Z</j.1:startTime>
+    <rdfs:label>My Reset Data Job</rdfs:label>
+    <j.1:progressUpdate rdf:resource="http://example.com/store/jobs/a193f791-b29e-4802-b54e-0d8587d747b3/767238a2-7309-424c-ab20-a40fb457c042"/>
+    <j.1:completionStatus rdf:resource="http://schemas.talis.com/2006/bigfoot/configuration#success"/>
+    <j.0:created rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2009-08-12T00:18:53Z</j.0:created>
+    <j.1:jobType rdf:resource="http://schemas.talis.com/2006/bigfoot/configuration#ResetDataJob"/>
+    <rdf:type rdf:resource="http://schemas.talis.com/2006/bigfoot/configuration#JobRequest"/>
+    <j.1:startMessage>ResetDataTask starting</j.1:startMessage>
+    <j.1:endTime rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2009-08-12T01:19:14Z</j.1:endTime>
+    <j.1:completionMessage>Reset store Complete.</j.1:completionMessage>
+    <j.1:actualStartTime rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2009-08-12T01:19:11Z</j.1:actualStartTime>
+  </rdf:Description>
+</rdf:RDF>"""
+
 
 class BuildUriTestCase(unittest.TestCase):
 
@@ -41,16 +63,18 @@ class DescribeTestCase(unittest.TestCase):
 class ReadJobTestCase(unittest.TestCase):
   def test_read_job_issues_get(self):
     client = MockHttp()
+    client.register("get", JOB_URI, JOB_DATA, httplib2.Response({'content-type':'application/rdf+xml'}))
     store = pynappl.Store('http://example.com/store', client=client)
-    job = store.read_job('http://example.com/store/jobs/123456789')
-    self.assertTrue(client.received_request('get', 'http://example.com/store/jobs/123456789'))
+    job = store.read_job(JOB_URI)
+    self.assertTrue(client.received_request('get', JOB_URI))
 
   def test_read_job_sets_accept(self):
     client = MockHttp()
+    client.register("get", JOB_URI, JOB_DATA, httplib2.Response({'content-type':'application/rdf+xml'}))
     store = pynappl.Store('http://example.com/store', client=client)
-    job = store.read_job('http://example.com/store/jobs/123456789')
+    job = store.read_job(JOB_URI)
 
-    (headers, body) = client.get_request('get', 'http://example.com/store/jobs/123456789')
+    (headers, body) = client.get_request('get', JOB_URI)
     self.assertTrue(headers.has_key('accept'))
     self.assertEqual('application/rdf+xml', headers['accept'])
 
