@@ -1,9 +1,12 @@
 import httplib2
+import urllib
 
 class Store:
-    def __init__(self,uri, user, pwd, client = None):
+    def __init__(self,uri, user = None, pwd = None, client = None):
       if client is None:
-        client = httplib2.Http()
+        self.client = httplib2.Http()
+      else:
+        self.client = client
       self.storeuri = uri
       self.user = user
       self.pwd = pwd
@@ -48,5 +51,9 @@ class Store:
 
 
     def get_jobs(self):
-      uri = self.build_uri("/jobs")
-      return self.client.request(uri, "GET", headers={"accept" : "application/rdf+xml"})
+      req_uri = self.build_uri("/jobs")
+      return self.client.request(req_uri, "GET", headers={"accept" : "application/rdf+xml"})
+
+    def describe(self, uri):
+      req_uri = self.build_uri('meta?about=' + urllib.quote_plus(uri))
+      return self.client.request(req_uri, "GET", headers={"accept" : "application/rdf+xml"})
