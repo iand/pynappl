@@ -425,6 +425,75 @@ class StoreGraphTestCase(unittest.TestCase):
     self.assertTrue(self.is_isomorphic(body))
 
 
+class StoreUrlTestCase(unittest.TestCase):
+  def setUp(self):
+    self.remote_url = 'http://example.org/data'
+    self.client = MockHttp()
+    self.client.register('get', self.remote_url, SINGLE_TRIPLE)
+    self.store = pynappl.Store('http://example.com/store', client=self.client)
+    self.graph = rdflib.ConjunctiveGraph()
+    self.graph.parse(StringIO(SINGLE_TRIPLE), format="xml")
+  
+  def is_isomorphic(self, data):
+    g = rdflib.ConjunctiveGraph()
+    g.parse(StringIO(data), format="xml")
+    return self.graph.isomorphic(g)
+  
+  def test_store_url_without_graph_gets_supplied_url(self):
+    resp = self.store.store_url(self.remote_url)
+    self.assertTrue(self.client.received_request('get', self.remote_url))
+
+  def test_store_url_without_graph_sets_accept_for_url_request(self):
+    resp = self.store.store_url(self.remote_url)
+
+    (headers, body) = self.client.get_request('get', self.remote_url)
+    self.assertTrue(headers.has_key('accept'))
+    self.assertEqual('application/rdf+xml, application/xml;q=0.1, text/xml;q=0.1', headers['accept'])
+
+  def test_store_url_without_graph_posts_to_metabox(self):
+    resp = self.store.store_url(self.remote_url)
+    self.assertTrue(self.client.received_request('post', 'http://example.com/store/meta'))
+
+  def test_store_url_without_graph_sets_content_type(self):
+    resp = self.store.store_url(self.remote_url)
+    (headers, body) = self.client.get_request('post', 'http://example.com/store/meta')
+    self.assertTrue(headers.has_key('content-type'))
+    self.assertEqual('application/rdf+xml', headers['content-type'])
+
+  def test_store_url_without_graph_sets_accept(self):
+    resp = self.store.store_url(self.remote_url)
+    (headers, body) = self.client.get_request('post', 'http://example.com/store/meta')
+    self.assertTrue(headers.has_key('accept'))
+    self.assertEqual('*/*', headers['accept'])
+
+  def test_store_url_without_graph_sets_body(self):
+    resp = self.store.store_url(self.remote_url)
+
+    (headers, body) = self.client.get_request('post', 'http://example.com/store/meta')
+    self.assertTrue(self.is_isomorphic(body))
+
+  def test_store_url_with_graph_posts_to_graph(self):
+    resp = self.store.store_url(self.remote_url, 'foo')
+    self.assertTrue(self.client.received_request('post', 'http://example.com/store/meta/graphs/foo'))
+
+  def test_store_url_with_graph_sets_content_type(self):
+    resp = self.store.store_url(self.remote_url, 'foo')
+    (headers, body) = self.client.get_request('post', 'http://example.com/store/meta/graphs/foo')
+    self.assertTrue(headers.has_key('content-type'))
+    self.assertEqual('application/rdf+xml', headers['content-type'])
+
+  def test_store_url_with_graph_sets_accept(self):
+    resp = self.store.store_url(self.remote_url, 'foo')
+    (headers, body) = self.client.get_request('post', 'http://example.com/store/meta/graphs/foo')
+    self.assertTrue(headers.has_key('accept'))
+    self.assertEqual('*/*', headers['accept'])
+
+  def test_store_url_with_graph_sets_body(self):
+    resp = self.store.store_url(self.remote_url, 'foo')
+    (headers, body) = self.client.get_request('post', 'http://example.com/store/meta/graphs/foo')
+    self.assertTrue(self.is_isomorphic(body))
+
+
 if __name__ == "__main__":
     unittest.main()
 

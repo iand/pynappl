@@ -42,6 +42,15 @@ class Store:
       data = g.serialize(format='xml')
       return self.store_data(data, graph_name)
 
+    def store_url(self, url, graph_name=None):
+      """Store the result of fetching a URL in the Metabox associated with this store"""
+      (response, body) = self.client.request(url, "GET", headers={"accept" : "application/rdf+xml, application/xml;q=0.1, text/xml;q=0.1"})
+      
+      if response.status > 299:
+        raise "Unable to read data from %s. Response was %s %s " % (url, response.status, response.reason) 
+      return self.store_data(body, graph_name)
+
+
     def build_uri(self, uri):
       """Build a request uri, by concatenating it with the base uri of the store
           uri:: relative URI to store service, e.g. "/service/sparql"
