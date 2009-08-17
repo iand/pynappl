@@ -1,7 +1,9 @@
 import httplib2
 class MockHttp(httplib2.Http):
-  responses = {}
-  requests = {}
+
+  def __init__(self):
+    self.responses = {}
+    self.requests = {}
 
   def register_response(self, method, uri, headers, body):
     self.responses[(method.lower(), uri)] = (headers, body)
