@@ -57,3 +57,6 @@ class Store:
     def describe(self, uri):
       req_uri = self.build_uri('meta?about=' + urllib.quote_plus(uri))
       return self.client.request(req_uri, "GET", headers={"accept" : "application/rdf+xml"})
+
+    def schedule_reset(self):
+      pass

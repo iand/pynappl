@@ -30,6 +30,33 @@ class DescribeTestCase(unittest.TestCase):
     self.assertTrue(client.received_request('get', 'http://example.com/store/meta?about=' + urllib.quote_plus('http://example.com/foo')))
 
 
+class ScheduleResetTestCase(unittest.TestCase):
+  def test_schedule_reset_data_posts_to_job_queue_uri(self):
+    client = MockHttp()
+    store = pynappl.Store('http://example.com/store', client=client)
+    resp = store.schedule_reset()
+    self.assertTrue(client.received_request('post', 'http://example.com/store/jobs'))
+
+  def test_schedule_reset_data_sets_content_type(self):
+    client = MockHttp()
+    store = pynappl.Store('http://example.com/store', client=client)
+    resp = store.schedule_reset()
+
+    (headers, body) = client.get_request('post', 'http://example.com/store/jobs')
+    self.assertTrue(headers.has_key('content-type'))
+    self.assertEqual('application/rdf+xml', headers['content-type'])
+
+  def test_schedule_reset_data_sets_accept(self):
+    client = MockHttp()
+    store = pynappl.Store('http://example.com/store', client=client)
+    resp = store.schedule_reset()
+    (headers, body) = client.get_request('post', 'http://example.com/store/jobs')
+    self.assertTrue(headers.has_key('accept'))
+    self.assertEqual('*/*', headers['accept'])
+  
+
+
+
 if __name__ == "__main__":
     unittest.main()
 
