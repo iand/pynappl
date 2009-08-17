@@ -5,9 +5,11 @@ import store_test
 
 
 def suite():
-  suite1 = unittest.TestLoader().loadTestsFromTestCase(store_test.BuildUriTestCase)
-  suite2 = unittest.TestLoader().loadTestsFromTestCase(store_test.DescribeTestCase)
-  return unittest.TestSuite([suite1, suite2])
+  return unittest.TestSuite([
+                              unittest.TestLoader().loadTestsFromTestCase(store_test.BuildUriTestCase)
+                            , unittest.TestLoader().loadTestsFromTestCase(store_test.DescribeTestCase)
+                            , unittest.TestLoader().loadTestsFromTestCase(store_test.ScheduleResetTestCase)
+                            ])
 
 
 if __name__ == '__main__':
