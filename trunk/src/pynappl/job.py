@@ -13,7 +13,7 @@ class Job:
 	actual_start_time = None
 	snapshot_uri = None
 	start_message = None
-	progress_updates = None
+	progress_updates = []
 	completion_status = None
 	completion_message = None
 	end_time = None
@@ -45,7 +45,7 @@ class Job:
 			raise "Unable to read job from store. Response code was %s" % headers["status"]
 		return self.parse(uri, resp.content)
 	
-	def parse(self, uri, xml)
+	def parse(uri, xml)
 		"""Parses job metadata returned from the platform as RDF/XML, creating a fully populated
 		Job instance
 		
@@ -54,72 +54,78 @@ class Job:
 		
 		g = rdflib.ConjunctiveGraph()
 		g.parse(rdflib.StringInputSource(xml))
-	job_el = REXML::XPath.first(root, "//*[@rdf:about='%s']" % uri, Pho::Namespaces::MAPPING )
-	uri = job_el.attributes["rdf:about"]
-	label = REXML::XPath.first(job_el, "rdfs:label", Pho::Namespaces::MAPPING ).text
-	type_el = REXML::XPath.first(job_el, "rdf:type", Pho::Namespaces::MAPPING )
-	type = type_el.attributes["rdf:resource"]
-	created = REXML::XPath.first(job_el, "dcterms:created", Pho::Namespaces::MAPPING ).text
-	start_time = REXML::XPath.first(job_el, "bf:startTime", Pho::Namespaces::MAPPING ).text
+		
+		s = rdflib.URIRef(uri)
+		
+		label = str(g.objects(s, rdflib.URIRef("http://www.w3.org/2000/01/rdf-schema#label")).next())
+		type = str(g.objects(s, rdflib.URIRef("http://www.w3.org/1999/02/22-rdf-syntax-ns#type")).next())
+		created = time.strptime(str(g.objects(s, rdflib.URIRef("http://purl.org/dc/terms/created")).next()), "%Y-%m-%dT%H:%M:%SZ")
+		start_time = time.strptime(str(g.objects(s, rdflib.URIRef("http://schemas.talis.com/2006/bigfoot/configuration#")).next()), "%Y-%m-%dT%H:%M:%SZ")
+		job = Job(uri, label, type, start_time, created)
+		
+		if type == "http://schemas.talis.com/2006/bigfoot/configuration#RestoreJob":
+			objects = list(g.objects(s, rdflib.URIRef("http://schemas.talis.com/2006/bigfoot/snapshotUri")))
+			if len(objects):
+				job.snapshot_uri = str(objects[0])
+		
+		objects = list(g.objects(s, rdflib.URIRef("http://schemas.talis.com/2006/bigfoot/actualStartTime")))
+		if len(objects):
+			job.actual_start_time = time.strptime(str(objects[0]), "%Y-%m-%dT%H:%M:%SZ")
+		
+		objects = list(g.objects(s, rdflib.URIRef("http://schemas.talis.com/2006/bigfoot/startMessage")))
+		if len(objects):
+			job.start_message = str(objects[0])
+		
+		objects = list(g.objects(s, rdflib.URIRef("http://schemas.talis.com/2006/bigfoot/completionMessage")))
+		if len(objects):
+			job.completion_message = str(objects[0])
+		
+		objects = list(g.objects(s, rdflib.URIRef("http://schemas.talis.com/2006/bigfoot/endTime")))
+		if len(objects):
+			job.end_time = str(objects[0])
+		
+		objects = list(g.objects(s, rdflib.URIRef("http://schemas.talis.com/2006/bigfoot/completionStatus")))
+		if len(objects):
+			job.completion_status = str(objects[0])
+		
+		objects = list(g.objects(s, rdflib.URIRef("http://schemas.talis.com/2006/bigfoot/progressUpdate")))
+		for object in objects:
+			update = JobUpdate()
+			
+			subobjects = list(g.objects(object, rdflib.URIRef("http://schemas.talis.com/2006/bigfoot/progressUpdateMessage")))
+			if len(subobjects):
+				update.message = str(subobjects[0])
+			
+			subobjects = list(g.objects(s, rdflib.URIRef("http://schemas.talis.com/2006/bigfoot/progressUpdateTime")))
+			if len(subobjects):
+				update.time = time.strptime(str(subobjects[0]), "%Y-%m-%dT%H:%M:%SZ")
+			
+			self.progress_updates.append(update)
+		
+		return job
 	
-	job = Job.new(uri, label, type, start_time, created)
-	if type == Pho::Jobs::RESTORE
-	with_first(job_el, "bf:snapshotUri") do |uri|
-	job.snapshot_uri = uri.attributes["rdf:resource"]
-	end
-	end
+	def get_progress_updates(self):
+		self.progress_updates.sort()
+		return self.progress_updates
 	
-		with_first(job_el, "bf:actualStartTime") do |el|
-			job.actual_start_time = el.text
-		with_first(job_el, "bf:startMessage") do |el|
-			job.start_message = el.text
-		with_first(job_el, "bf:completionMessage") do |el|
-			job.completion_message = el.text
-		with_first(job_el, "bf:endTime") do |el|
-			job.end_time = el.text
-		with_first(job_el, "bf:completionStatus") do |el|
-			job.completion_status = el.attributes["rdf:resource"]
-		with_each(job_el, "bf:progressUpdate") do |el|
-			update = JobUpdate.new
-		with_first(el, "bf:progressUpdateMessage") do |msg|
-			update.message = msg.text
-		with_first(el, "bf:progressUpdateTime") do |time|
-			update.time = time.text
-		job.progress_updates << update
+	def has_started(self):
+		"""Has the job started?"""
+		return self.actual_start_time != None
 	
-		return job 
+	def has_completed(self):
+		"""Has the job completed?"""
+		return self.completion_status != None
 	
+	def was_successful(self):
+		"""Was the job successful?"""
+		return self.has_completed() and self.completion_status == self.SUCCESS
 	
-	def progress_updates()
-		@progress_updates.sort! { |x,y|
-			x.time <=> y.time 
-		}
-	return @progress_updates
-	
-	#Has the job started?
-	def started?
-		return @actual_start_time != nil
-	
-	#Has the job completed?
-	def completed?
-		return @completion_status != nil
+	def is_running(self):
+		"""Is the job still running?"""
+		return self.has_started() and not self.has_completed()
 
-	#Was the job successful?
-	def successful?
-		return self.completed? && @completion_status == Pho::Job::SUCCESS
-
-	#Is the job still running?
-	def running?
-		return started? && !completed? 
-
-	def Job.with_first(el, xpath)
-		found_el = REXML::XPath.first(el, xpath, Pho::Namespaces::MAPPING)
-		if found_el != nil
-			yield found_el
-
-	def Job.with_each(el, xpath)
-		REXML::XPath.each(el, xpath, Pho::Namespaces::MAPPING) do |e|
-		root = e.document.root
-		uri = e.attributes["rdf:resource"]
-		ref_el = REXML::XPath.first(root, "//*[@rdf:about='#{uri}']", Pho::Namespaces::MAPPING)
-		yield ref_el
+class JobUpdate:
+	#Just a placeholder
+	
+	message = None
+	time = None
