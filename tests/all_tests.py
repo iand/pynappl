@@ -9,6 +9,7 @@ def suite():
                               unittest.TestLoader().loadTestsFromTestCase(store_test.BuildUriTestCase)
                             , unittest.TestLoader().loadTestsFromTestCase(store_test.DescribeTestCase)
                             , unittest.TestLoader().loadTestsFromTestCase(store_test.ScheduleResetTestCase)
+                            , unittest.TestLoader().loadTestsFromTestCase(store_test.ReadJobTestCase)
                             ])
 
 

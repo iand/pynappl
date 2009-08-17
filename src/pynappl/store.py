@@ -59,4 +59,9 @@ class Store:
       return self.client.request(req_uri, "GET", headers={"accept" : "application/rdf+xml"})
 
     def schedule_reset(self):
-      pass
+      req_uri = self.build_uri("/jobs")
+      (response, body) = self.client.request(req_uri, "POST", headers={"accept" : "*/*", 'content-type':'application/rdf+xml'})
+
+    def read_job(self, uri):
+      (response, body) = self.client.request(uri, "GET", headers={"accept" : "application/rdf+xml"})
+      
