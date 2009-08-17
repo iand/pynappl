@@ -1,7 +1,12 @@
+import httplib2
 
 class Store:
-    def __init__(self,uri):
+    def __init__(self,uri, user, pwd, client = None):
+      if client is None:
+        client = httplib2.Http()
       self.storeuri = uri
+      self.user = user
+      self.pwd = pwd
 
     def store_data(self, data, graph_name=None):
       """Store some RDF in the Metabox associated with this store. Default is to store the
@@ -40,3 +45,8 @@ class Store:
         return self.storeuri + uri
       else:
         return self.storeuri + "/" + uri
+
+
+    def get_jobs(self):
+      uri = self.build_uri("/jobs")
+      return self.client.request(uri, "GET", headers={"accept" : "application/rdf+xml"})
