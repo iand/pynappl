@@ -17,4 +17,4 @@ class MockHttp(httplib2.Http):
     return self.requests.has_key( (method.lower(), uri) )
     
   def get_request(self, method, uri):
-    return self.request[(method.lower(), uri)]
+    return self.requests[(method.lower(), uri)]
