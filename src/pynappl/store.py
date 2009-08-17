@@ -33,13 +33,18 @@ class Store:
       return self.client.request(req_uri, "POST", body=data, headers={"accept" : "*/*", 'content-type':'application/rdf+xml'})
     
     def store_file(self, file, graph_name=None):
-      """Store the contents of a File (or any IO stream) in the Metabox associated with this store
+      """Store the contents of a File (file-like object) in the Metabox associated with this store
          The client does not support streaming submissions of data, so the stream will be fully read before data is submitted to the platform
          file:: an IO object      
       """
       data = file.read()
       file.close()
-      return store_data(data)
+      return self.store_data(data, graph_name)
+
+    def store_graph(self, g, graph_name=None):
+      """Store the contents of an rdflib.ConjuctiveGraph in the Metabox associated with this store"""
+      data = g.serialize(format='xml')
+      return self.store_data(data, graph_name)
 
     def build_uri(self, uri):
       """Build a request uri, by concatenating it with the base uri of the store

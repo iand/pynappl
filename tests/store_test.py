@@ -3,6 +3,7 @@ import pynappl
 import urllib
 import rdflib
 import datetime as dt
+import tempfile
 
 from StringIO import StringIO
 
@@ -253,6 +254,151 @@ class StoreDataTestCase(unittest.TestCase):
 
     (headers, body) = client.get_request('post', 'http://example.com/store/meta/graphs/foo')
     self.assertEqual(SINGLE_TRIPLE, body)
+
+
+class StoreFileTestCase(unittest.TestCase):
+  def setUp(self):
+    self.file = tempfile.TemporaryFile()
+    self.file.write(SINGLE_TRIPLE)
+    self.file.seek(0)
+  
+  def test_store_file_without_graph_posts_to_metabox(self):
+    client = MockHttp()
+    store = pynappl.Store('http://example.com/store', client=client)
+    resp = store.store_file(self.file)
+    self.assertTrue(client.received_request('post', 'http://example.com/store/meta'))
+
+  def test_store_file_without_graph_sets_content_type(self):
+    client = MockHttp()
+    store = pynappl.Store('http://example.com/store', client=client)
+    resp = store.store_file(self.file)
+
+    (headers, body) = client.get_request('post', 'http://example.com/store/meta')
+    self.assertTrue(headers.has_key('content-type'))
+    self.assertEqual('application/rdf+xml', headers['content-type'])
+
+  def test_store_file_without_graph_sets_accept(self):
+    client = MockHttp()
+    store = pynappl.Store('http://example.com/store', client=client)
+    resp = store.store_file(self.file)
+
+    (headers, body) = client.get_request('post', 'http://example.com/store/meta')
+    self.assertTrue(headers.has_key('accept'))
+    self.assertEqual('*/*', headers['accept'])
+
+  def test_store_file_without_graph_sets_body(self):
+    client = MockHttp()
+    store = pynappl.Store('http://example.com/store', client=client)
+    resp = store.store_file(self.file)
+
+    (headers, body) = client.get_request('post', 'http://example.com/store/meta')
+    self.assertEqual(SINGLE_TRIPLE, body)
+
+  def test_store_file_with_graph_posts_to_graph(self):
+    client = MockHttp()
+    store = pynappl.Store('http://example.com/store', client=client)
+    resp = store.store_file(self.file, 'foo')
+    self.assertTrue(client.received_request('post', 'http://example.com/store/meta/graphs/foo'))
+
+  def test_store_file_with_graph_sets_content_type(self):
+    client = MockHttp()
+    store = pynappl.Store('http://example.com/store', client=client)
+    resp = store.store_file(self.file, 'foo')
+
+    (headers, body) = client.get_request('post', 'http://example.com/store/meta/graphs/foo')
+    self.assertTrue(headers.has_key('content-type'))
+    self.assertEqual('application/rdf+xml', headers['content-type'])
+
+  def test_store_file_with_graph_sets_accept(self):
+    client = MockHttp()
+    store = pynappl.Store('http://example.com/store', client=client)
+    resp = store.store_file(self.file, 'foo')
+
+    (headers, body) = client.get_request('post', 'http://example.com/store/meta/graphs/foo')
+    self.assertTrue(headers.has_key('accept'))
+    self.assertEqual('*/*', headers['accept'])
+
+  def test_store_file_with_graph_sets_body(self):
+    client = MockHttp()
+    store = pynappl.Store('http://example.com/store', client=client)
+    resp = store.store_file(self.file, 'foo')
+
+    (headers, body) = client.get_request('post', 'http://example.com/store/meta/graphs/foo')
+    self.assertEqual(SINGLE_TRIPLE, body)
+
+class StoreGraphTestCase(unittest.TestCase):
+  def setUp(self):
+    self.graph = rdflib.ConjunctiveGraph()
+    self.graph.parse(StringIO(SINGLE_TRIPLE), format="xml")
+  
+  def is_isomorphic(self, data):
+    g = rdflib.ConjunctiveGraph()
+    g.parse(StringIO(data), format="xml")
+    return self.graph.isomorphic(g)
+  
+  def test_store_file_without_graph_posts_to_metabox(self):
+    client = MockHttp()
+    store = pynappl.Store('http://example.com/store', client=client)
+    resp = store.store_graph(self.graph)
+    self.assertTrue(client.received_request('post', 'http://example.com/store/meta'))
+
+  def test_store_file_without_graph_sets_content_type(self):
+    client = MockHttp()
+    store = pynappl.Store('http://example.com/store', client=client)
+    resp = store.store_graph(self.graph)
+
+    (headers, body) = client.get_request('post', 'http://example.com/store/meta')
+    self.assertTrue(headers.has_key('content-type'))
+    self.assertEqual('application/rdf+xml', headers['content-type'])
+
+  def test_store_file_without_graph_sets_accept(self):
+    client = MockHttp()
+    store = pynappl.Store('http://example.com/store', client=client)
+    resp = store.store_graph(self.graph)
+
+    (headers, body) = client.get_request('post', 'http://example.com/store/meta')
+    self.assertTrue(headers.has_key('accept'))
+    self.assertEqual('*/*', headers['accept'])
+
+  def test_store_file_without_graph_sets_body(self):
+    client = MockHttp()
+    store = pynappl.Store('http://example.com/store', client=client)
+    resp = store.store_graph(self.graph)
+
+    (headers, body) = client.get_request('post', 'http://example.com/store/meta')
+    self.assertTrue(self.is_isomorphic(body))
+
+  def test_store_file_with_graph_posts_to_graph(self):
+    client = MockHttp()
+    store = pynappl.Store('http://example.com/store', client=client)
+    resp = store.store_graph(self.graph, 'foo')
+    self.assertTrue(client.received_request('post', 'http://example.com/store/meta/graphs/foo'))
+
+  def test_store_file_with_graph_sets_content_type(self):
+    client = MockHttp()
+    store = pynappl.Store('http://example.com/store', client=client)
+    resp = store.store_graph(self.graph, 'foo')
+
+    (headers, body) = client.get_request('post', 'http://example.com/store/meta/graphs/foo')
+    self.assertTrue(headers.has_key('content-type'))
+    self.assertEqual('application/rdf+xml', headers['content-type'])
+
+  def test_store_file_with_graph_sets_accept(self):
+    client = MockHttp()
+    store = pynappl.Store('http://example.com/store', client=client)
+    resp = store.store_graph(self.graph, 'foo')
+
+    (headers, body) = client.get_request('post', 'http://example.com/store/meta/graphs/foo')
+    self.assertTrue(headers.has_key('accept'))
+    self.assertEqual('*/*', headers['accept'])
+
+  def test_store_file_with_graph_sets_body(self):
+    client = MockHttp()
+    store = pynappl.Store('http://example.com/store', client=client)
+    resp = store.store_graph(self.graph, 'foo')
+
+    (headers, body) = client.get_request('post', 'http://example.com/store/meta/graphs/foo')
+    self.assertTrue(self.is_isomorphic(body))
 
 
 if __name__ == "__main__":
