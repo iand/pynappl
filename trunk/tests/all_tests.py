@@ -2,6 +2,7 @@
 
 import unittest
 import store_test
+import job_test
 
 
 def suite():
@@ -11,6 +12,7 @@ def suite():
                             , unittest.TestLoader().loadTestsFromTestCase(store_test.ScheduleResetTestCase)
                             , unittest.TestLoader().loadTestsFromTestCase(store_test.ReadJobTestCase)
                             , unittest.TestLoader().loadTestsFromTestCase(store_test.StoreDataTestCase)
+                            , unittest.TestLoader().loadTestsFromTestCase(job_test.ParseTestCase)
                             ])
 
 
