@@ -1,3 +1,5 @@
+__all__ = ["Store"]
+
 import httplib2
 import urllib
 
