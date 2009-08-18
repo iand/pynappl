@@ -183,7 +183,7 @@ class RecordingFileManager(pynappl.FileManager):
     pynappl.FileManager.__init__(self, directory_name, recursive, ok_suffix='ok', fail_suffix='fail')
     self.files_processed = []
   
-  def process_file(self, file, filename):
+  def process_file(self, filename):
     self.files_processed.append(filename)
 
 
@@ -305,6 +305,71 @@ class SummaryTestCase(FileManagerTestCase):
     summary = m.summary()
     self.assertEqual( self.dirname  + " contains 3 files: 1 failed, 2 succeeded, 0 new", summary )
 
+
+class ResetTestCase(FileManagerTestCase):
+
+  def test_reset_non_recursive(self):
+    self.add_file('foo')
+    self.add_file('foo.fail')
+    self.add_file('bar')
+    self.add_file('bar.ok')
+    self.add_dir('dir1')
+    self.add_file('dir1/baz')
+    self.add_file('dir1/baz.ok')
+    m = pynappl.FileManager(self.dirname, False)
+    files = m.list_new()
+    self.assertEqual(0, len(files) )
+    m.reset()
+    files = m.list_new()
+    self.assertEqual(2, len(files) )
+
+  def test_reset_recursive(self):
+    self.add_file('foo')
+    self.add_file('foo.fail')
+    self.add_file('bar')
+    self.add_file('bar.ok')
+    self.add_dir('dir1')
+    self.add_file('dir1/baz')
+    self.add_file('dir1/baz.ok')
+    m = pynappl.FileManager(self.dirname, True)
+    files = m.list_new()
+    self.assertEqual(0, len(files) )
+    m.reset()
+    files = m.list_new()
+    self.assertEqual(3, len(files) )
+
+class RetryFailuresTestCase(FileManagerTestCase):
+
+  def test_retry_failures_non_recursive_passes_all_files_to_process_file(self):
+    self.add_file('foo')
+    self.add_file('foo.fail')
+    self.add_file('bar')
+    self.add_file('bar.ok')
+    self.add_dir('dir1')
+    self.add_file('dir1/baz')
+    self.add_file('dir1/baz.fail')
+    m = RecordingFileManager(self.dirname, False)
+    m.retry_failures()
+    self.assertEqual( 1, len(m.files_processed) )
+    self.assertTrue( os.path.join(self.dirname, 'foo') in m.files_processed )
+    self.assertFalse( os.path.join(self.dirname, 'bar') in m.files_processed )
+    self.assertFalse( os.path.join(self.dirname, 'dir1/baz') in m.files_processed )
+
+
+  def test_retry_failures_recursive_passes_all_files_to_process_file(self):
+    self.add_file('foo')
+    self.add_file('foo.fail')
+    self.add_file('bar')
+    self.add_file('bar.ok')
+    self.add_dir('dir1')
+    self.add_file('dir1/baz')
+    self.add_file('dir1/baz.fail')
+    m = RecordingFileManager(self.dirname, True)
+    m.retry_failures()
+    self.assertEqual( 2, len(m.files_processed) )
+    self.assertTrue( os.path.join(self.dirname, 'foo') in m.files_processed )
+    self.assertFalse( os.path.join(self.dirname, 'bar') in m.files_processed )
+    self.assertTrue( os.path.join(self.dirname, 'dir1/baz') in m.files_processed )
 
 if __name__ == "__main__":
   unittest.main()
