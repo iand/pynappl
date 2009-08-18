@@ -21,6 +21,7 @@ import httplib2
 import rdflib
 import datetime as dt
 import tempfile
+import os, os.path
 
 from StringIO import StringIO
 
@@ -298,20 +299,24 @@ class StoreDataTestCase(unittest.TestCase):
 
 class StoreFileTestCase(unittest.TestCase):
   def setUp(self):
-    self.file = tempfile.TemporaryFile()
+    self.file = tempfile.NamedTemporaryFile(delete=False)
+    self.filename = self.file.name
     self.file.write(SINGLE_TRIPLE)
-    self.file.seek(0)
-  
+    self.file.close()
+
+  def tearDown(self):
+    os.remove(self.filename)
+      
   def test_store_file_without_graph_posts_to_metabox(self):
     client = MockHttp()
     store = pynappl.Store('http://example.com/store', client=client)
-    resp = store.store_file(self.file)
+    resp = store.store_file(self.filename)
     self.assertTrue(client.received_request('post', 'http://example.com/store/meta'))
 
   def test_store_file_without_graph_sets_content_type(self):
     client = MockHttp()
     store = pynappl.Store('http://example.com/store', client=client)
-    resp = store.store_file(self.file)
+    resp = store.store_file(self.filename)
 
     (headers, body) = client.get_request('post', 'http://example.com/store/meta')
     self.assertTrue(headers.has_key('content-type'))
@@ -320,7 +325,7 @@ class StoreFileTestCase(unittest.TestCase):
   def test_store_file_without_graph_sets_accept(self):
     client = MockHttp()
     store = pynappl.Store('http://example.com/store', client=client)
-    resp = store.store_file(self.file)
+    resp = store.store_file(self.filename)
 
     (headers, body) = client.get_request('post', 'http://example.com/store/meta')
     self.assertTrue(headers.has_key('accept'))
@@ -329,7 +334,7 @@ class StoreFileTestCase(unittest.TestCase):
   def test_store_file_without_graph_sets_body(self):
     client = MockHttp()
     store = pynappl.Store('http://example.com/store', client=client)
-    resp = store.store_file(self.file)
+    resp = store.store_file(self.filename)
 
     (headers, body) = client.get_request('post', 'http://example.com/store/meta')
     self.assertEqual(SINGLE_TRIPLE, body)
@@ -337,13 +342,13 @@ class StoreFileTestCase(unittest.TestCase):
   def test_store_file_with_graph_posts_to_graph(self):
     client = MockHttp()
     store = pynappl.Store('http://example.com/store', client=client)
-    resp = store.store_file(self.file, 'foo')
+    resp = store.store_file(self.filename, 'foo')
     self.assertTrue(client.received_request('post', 'http://example.com/store/meta/graphs/foo'))
 
   def test_store_file_with_graph_sets_content_type(self):
     client = MockHttp()
     store = pynappl.Store('http://example.com/store', client=client)
-    resp = store.store_file(self.file, 'foo')
+    resp = store.store_file(self.filename, 'foo')
 
     (headers, body) = client.get_request('post', 'http://example.com/store/meta/graphs/foo')
     self.assertTrue(headers.has_key('content-type'))
@@ -352,7 +357,7 @@ class StoreFileTestCase(unittest.TestCase):
   def test_store_file_with_graph_sets_accept(self):
     client = MockHttp()
     store = pynappl.Store('http://example.com/store', client=client)
-    resp = store.store_file(self.file, 'foo')
+    resp = store.store_file(self.filename, 'foo')
 
     (headers, body) = client.get_request('post', 'http://example.com/store/meta/graphs/foo')
     self.assertTrue(headers.has_key('accept'))
@@ -361,7 +366,7 @@ class StoreFileTestCase(unittest.TestCase):
   def test_store_file_with_graph_sets_body(self):
     client = MockHttp()
     store = pynappl.Store('http://example.com/store', client=client)
-    resp = store.store_file(self.file, 'foo')
+    resp = store.store_file(self.filename, 'foo')
 
     (headers, body) = client.get_request('post', 'http://example.com/store/meta/graphs/foo')
     self.assertEqual(SINGLE_TRIPLE, body)

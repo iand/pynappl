@@ -21,3 +21,9 @@ class RDFManager(pynappl.FileManager):
     self.store = store
     self.dir = directory_name
     
+  def __init__(self, store, directory_name, recursive = False, filename_filter = None, ok_suffix='ok', fail_suffix='fail'):
+    pynappl.FileManager.__init__(self, directory_name, recursive, filename_filter, ok_suffix, fail_suffix)
+    self.store = store
+    
+  def process_file(self, filename):
+    self.store.store_file(filename)

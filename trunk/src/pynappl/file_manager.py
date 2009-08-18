@@ -17,13 +17,18 @@
 import pynappl
 import glob
 import os, os.path
+import re
 
 class FileManager():
-  def __init__(self, directory_name, recursive = False, ok_suffix='ok', fail_suffix='fail'):
+  def __init__(self, directory_name, recursive = False, filename_filter = None, ok_suffix='ok', fail_suffix='fail'):
     self.dirname = directory_name
     self.ok_suffix = ok_suffix
     self.fail_suffix = fail_suffix
     self.recursive = recursive
+    if filename_filter is not None:
+      self.filename_filter = re.compile(filename_filter)
+    else:
+      self.filename_filter = None
     
   def process(self):
     """Process all files in directory"""
@@ -38,12 +43,14 @@ class FileManager():
         for filename in files_found:
           full_filename = os.path.join(root, filename)
           if os.path.isfile(full_filename) and not full_filename.endswith("." + self.ok_suffix) and not full_filename.endswith("." + self.fail_suffix):
-            files.append(full_filename)
+            if self.filename_filter is None or self.filename_filter.search(full_filename, re.IGNORECASE) is not None:
+              files.append(full_filename)
     else:
       for filename in os.listdir(self.dirname):
         full_filename = os.path.join(self.dirname, filename)
         if os.path.isfile(full_filename) and not full_filename.endswith("." + self.ok_suffix) and not full_filename.endswith("." + self.fail_suffix):
-          files.append(full_filename)
+          if self.filename_filter is None or self.filename_filter.search(full_filename, re.IGNORECASE) is not None:
+            files.append(full_filename)
     
 
     return files
