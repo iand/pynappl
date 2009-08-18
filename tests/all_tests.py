@@ -18,6 +18,8 @@
 import unittest
 import store_test
 import job_test
+import file_manager_test
+import rdf_manager_test
 
 
 def suite():
@@ -33,7 +35,11 @@ def suite():
                             , unittest.TestLoader().loadTestsFromTestCase(store_test.StoreFileTestCase)
                             , unittest.TestLoader().loadTestsFromTestCase(store_test.StoreGraphTestCase)
                             , unittest.TestLoader().loadTestsFromTestCase(store_test.StoreUrlTestCase)
+
                             , unittest.TestLoader().loadTestsFromTestCase(job_test.ParseTestCase)
+
+                            , unittest.TestLoader().loadTestsFromTestCase(file_manager_test.ListTestCase)
+                            , unittest.TestLoader().loadTestsFromTestCase(file_manager_test.ListNewTestCase)
                             ])
 
 
