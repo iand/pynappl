@@ -20,7 +20,8 @@ import tempfile
 from mock_store import MockStore
 import os, os.path
 
-class ListTestCase(unittest.TestCase):
+
+class FileManagerTestCase(unittest.TestCase):
   def setUp(self):
     self.dirname = tempfile.mkdtemp()
   
@@ -40,16 +41,17 @@ class ListTestCase(unittest.TestCase):
   def add_dir(self, dirname):
     os.mkdir(os.path.join(self.dirname, dirname))
 
+class ListTestCase(FileManagerTestCase):
   
   def test_list_non_recursive_empty_dir(self):
-    m = pynappl.FileManager(MockStore(), self.dirname)
+    m = pynappl.FileManager(self.dirname, False)
     files = m.list()
     self.assertEqual(0, len(files))
 
   def test_list_non_recursive_populated_dir(self):
     self.add_file('foo')
     self.add_file('bar')
-    m = pynappl.FileManager(MockStore(), self.dirname)
+    m = pynappl.FileManager(self.dirname, False)
     files = m.list()
     self.assertEqual(2, len(files))
 
@@ -57,7 +59,7 @@ class ListTestCase(unittest.TestCase):
     self.add_file('foo')
     self.add_file('bar')
     self.add_file('bar.ok')
-    m = pynappl.FileManager(MockStore(), self.dirname)
+    m = pynappl.FileManager(self.dirname, False)
     files = m.list()
     self.assertEqual(2, len(files))
 
@@ -65,15 +67,15 @@ class ListTestCase(unittest.TestCase):
     self.add_file('foo')
     self.add_file('bar')
     self.add_file('bar.fail')
-    m = pynappl.FileManager(MockStore(), self.dirname)
+    m = pynappl.FileManager(self.dirname, False)
     files = m.list()
     self.assertEqual(2, len(files))
 
   def test_list_recursive_empty_dir(self):
     self.add_dir('dir1')
     self.add_dir('dir2')
-    m = pynappl.FileManager(MockStore(), self.dirname)
-    files = m.list(True)
+    m = pynappl.FileManager(self.dirname, True)
+    files = m.list()
     self.assertEqual(0, len(files))
 
   def test_list_recursive_populated_dir(self):
@@ -83,8 +85,8 @@ class ListTestCase(unittest.TestCase):
     self.add_file('bar')
     self.add_file('dir1/foo1')
     self.add_file('dir2/foo2')
-    m = pynappl.FileManager(MockStore(), self.dirname)
-    files = m.list(True)
+    m = pynappl.FileManager(self.dirname, True)
+    files = m.list()
     self.assertEqual(4, len(files))
 
   def test_list_recursive_ignores_ok_suffix(self):
@@ -92,8 +94,8 @@ class ListTestCase(unittest.TestCase):
     self.add_file('foo')
     self.add_file('dir1/bar')
     self.add_file('dir1/bar.ok')
-    m = pynappl.FileManager(MockStore(), self.dirname)
-    files = m.list(True)
+    m = pynappl.FileManager(self.dirname, True)
+    files = m.list()
     self.assertEqual(2, len(files))
 
   def test_list_recursive_ignores_fail_suffix(self):
@@ -101,42 +103,23 @@ class ListTestCase(unittest.TestCase):
     self.add_file('foo')
     self.add_file('dir1/bar')
     self.add_file('dir1/bar.fail')
-    m = pynappl.FileManager(MockStore(), self.dirname)
-    files = m.list(True)
+    m = pynappl.FileManager(self.dirname, True)
+    files = m.list()
     self.assertEqual(2, len(files))
 
 
 
-class ListNewTestCase(unittest.TestCase):
-  def setUp(self):
-    self.dirname = tempfile.mkdtemp()
-  
-  def tearDown(self):
-    for root, dirs, files in os.walk(self.dirname, topdown=False):
-      for name in files:
-          os.remove(os.path.join(root, name))
-      for name in dirs:
-          os.rmdir(os.path.join(root, name))
-    os.rmdir(self.dirname)
-    
-  def add_file(self, filename, data='dummy data'):
-    file = open(os.path.join(self.dirname, filename), 'w')
-    file.write(data)
-    file.close()
-    
-  def add_dir(self, dirname):
-    os.mkdir(os.path.join(self.dirname, dirname))
-
+class ListNewTestCase(FileManagerTestCase):
   
   def test_list_new_non_recursive_empty_dir(self):
-    m = pynappl.FileManager(MockStore(), self.dirname)
+    m = pynappl.FileManager(self.dirname, False)
     files = m.list_new()
     self.assertEqual(0, len(files))
 
   def test_list_new_non_recursive_populated_dir(self):
     self.add_file('foo')
     self.add_file('bar')
-    m = pynappl.FileManager(MockStore(), self.dirname)
+    m = pynappl.FileManager(self.dirname, False)
     files = m.list_new()
     self.assertEqual(2, len(files))
 
@@ -144,7 +127,7 @@ class ListNewTestCase(unittest.TestCase):
     self.add_file('foo')
     self.add_file('bar')
     self.add_file('bar.ok')
-    m = pynappl.FileManager(MockStore(), self.dirname)
+    m = pynappl.FileManager(self.dirname, False)
     files = m.list_new()
     self.assertEqual(1, len(files))
 
@@ -152,15 +135,15 @@ class ListNewTestCase(unittest.TestCase):
     self.add_file('foo')
     self.add_file('bar')
     self.add_file('bar.fail')
-    m = pynappl.FileManager(MockStore(), self.dirname)
+    m = pynappl.FileManager(self.dirname, False)
     files = m.list_new()
     self.assertEqual(1, len(files))
 
   def test_list_new_recursive_empty_dir(self):
     self.add_dir('dir1')
     self.add_dir('dir2')
-    m = pynappl.FileManager(MockStore(), self.dirname)
-    files = m.list_new(True)
+    m = pynappl.FileManager(self.dirname, True)
+    files = m.list_new()
     self.assertEqual(0, len(files))
 
   def test_list_new_recursive_populated_dir(self):
@@ -170,8 +153,8 @@ class ListNewTestCase(unittest.TestCase):
     self.add_file('bar')
     self.add_file('dir1/foo1')
     self.add_file('dir2/foo2')
-    m = pynappl.FileManager(MockStore(), self.dirname)
-    files = m.list_new(True)
+    m = pynappl.FileManager(self.dirname, True)
+    files = m.list_new()
     self.assertEqual(4, len(files))
 
   def test_list_new_recursive_ignores_ok_suffix(self):
@@ -179,8 +162,8 @@ class ListNewTestCase(unittest.TestCase):
     self.add_file('foo')
     self.add_file('dir1/bar')
     self.add_file('dir1/bar.ok')
-    m = pynappl.FileManager(MockStore(), self.dirname)
-    files = m.list_new(True)
+    m = pynappl.FileManager(self.dirname, True)
+    files = m.list_new()
     self.assertEqual(1, len(files))
 
   def test_list_new_recursive_ignores_fail_suffix(self):
@@ -188,9 +171,139 @@ class ListNewTestCase(unittest.TestCase):
     self.add_file('foo')
     self.add_file('dir1/bar')
     self.add_file('dir1/bar.fail')
-    m = pynappl.FileManager(MockStore(), self.dirname)
-    files = m.list_new(True)
+    m = pynappl.FileManager(self.dirname, True)
+    files = m.list_new()
     self.assertEqual(1, len(files))
+
+
+class RecordingFileManager(pynappl.FileManager):
+  """An instrumented version of FileManager that records which files were processed"""
+  
+  def __init__(self, directory_name, recursive= False, ok_suffix='ok', fail_suffix='fail'):
+    pynappl.FileManager.__init__(self, directory_name, recursive, ok_suffix='ok', fail_suffix='fail')
+    self.files_processed = []
+  
+  def process_file(self, file, filename):
+    self.files_processed.append(filename)
+
+
+
+class ProcessTestCase(FileManagerTestCase):
+
+  def test_process_non_recursive_passes_all_files_to_process_file(self):
+    self.add_file('foo')
+    self.add_file('bar')
+    self.add_dir('dir1')
+    self.add_file('dir1/baz')
+    m = RecordingFileManager(self.dirname, False)
+    m.process()
+    self.assertEqual( 2, len(m.files_processed) )
+    self.assertTrue( os.path.join(self.dirname, 'foo') in m.files_processed )
+    self.assertTrue( os.path.join(self.dirname, 'bar') in m.files_processed )
+    self.assertFalse( os.path.join(self.dirname, 'dir1/baz') in m.files_processed )
+
+  def test_process_recursive_passes_all_files_to_process_file(self):
+    self.add_file('foo')
+    self.add_file('bar')
+    self.add_dir('dir1')
+    self.add_file('dir1/baz')
+    m = RecordingFileManager(self.dirname, True)
+    m.process()
+    self.assertEqual( 3, len(m.files_processed) )
+    self.assertTrue( os.path.join(self.dirname, 'foo') in m.files_processed )
+    self.assertTrue( os.path.join(self.dirname, 'bar') in m.files_processed )
+    self.assertTrue( os.path.join(self.dirname, 'dir1/baz') in m.files_processed )
+
+class ListFailuresTestCase(FileManagerTestCase):
+
+  def test_list_failures_non_recursive(self):
+    self.add_file('foo')
+    self.add_file('foo.ok')
+    self.add_file('bar')
+    self.add_file('bar.fail')
+    self.add_dir('dir1')
+    self.add_file('dir1/baz')
+    self.add_file('dir1/baz.fail')
+    m = pynappl.FileManager(self.dirname, False)
+    files = m.list_failures()
+    self.assertEqual( 1, len(files) )
+    self.assertFalse( os.path.join(self.dirname, 'foo') in files )
+    self.assertTrue( os.path.join(self.dirname, 'bar') in files )
+    self.assertFalse( os.path.join(self.dirname, 'dir1/baz') in files )
+
+  def test_list_failures_recursive(self):
+    self.add_file('foo')
+    self.add_file('foo.ok')
+    self.add_file('bar')
+    self.add_file('bar.fail')
+    self.add_dir('dir1')
+    self.add_file('dir1/baz')
+    self.add_file('dir1/baz.fail')
+    m = pynappl.FileManager(self.dirname, True)
+    files = m.list_failures()
+    self.assertEqual( 2, len(files) )
+    self.assertFalse( os.path.join(self.dirname, 'foo') in files )
+    self.assertTrue( os.path.join(self.dirname, 'bar') in files )
+    self.assertTrue( os.path.join(self.dirname, 'dir1/baz') in files )
+
+class ListSuccessesTestCase(FileManagerTestCase):
+
+  def test_list_successes_non_recursive(self):
+    self.add_file('foo')
+    self.add_file('foo.fail')
+    self.add_file('bar')
+    self.add_file('bar.ok')
+    self.add_dir('dir1')
+    self.add_file('dir1/baz')
+    self.add_file('dir1/baz.ok')
+    m = pynappl.FileManager(self.dirname, False)
+    files = m.list_successes()
+    self.assertEqual( 1, len(files) )
+    self.assertFalse( os.path.join(self.dirname, 'foo') in files )
+    self.assertTrue( os.path.join(self.dirname, 'bar') in files )
+    self.assertFalse( os.path.join(self.dirname, 'dir1/baz') in files )
+
+  def test_list_successes_recursive(self):
+    self.add_file('foo')
+    self.add_file('foo.fail')
+    self.add_file('bar')
+    self.add_file('bar.ok')
+    self.add_dir('dir1')
+    self.add_file('dir1/baz')
+    self.add_file('dir1/baz.ok')
+    m = pynappl.FileManager(self.dirname, True)
+    files = m.list_successes()
+    self.assertEqual( 2, len(files) )
+    self.assertFalse( os.path.join(self.dirname, 'foo') in files )
+    self.assertTrue( os.path.join(self.dirname, 'bar') in files )
+    self.assertTrue( os.path.join(self.dirname, 'dir1/baz') in files )
+
+
+class SummaryTestCase(FileManagerTestCase):
+
+  def test_summary_non_recursive(self):
+    self.add_file('foo')
+    self.add_file('foo.fail')
+    self.add_file('bar')
+    self.add_file('bar.ok')
+    self.add_dir('dir1')
+    self.add_file('dir1/baz')
+    self.add_file('dir1/baz.ok')
+    m = pynappl.FileManager(self.dirname, False)
+    summary = m.summary()
+    self.assertEqual( self.dirname  + " contains 2 files: 1 failed, 1 succeeded, 0 new", summary )
+
+  def test_successes_recursive(self):
+    self.add_file('foo')
+    self.add_file('foo.fail')
+    self.add_file('bar')
+    self.add_file('bar.ok')
+    self.add_dir('dir1')
+    self.add_file('dir1/baz')
+    self.add_file('dir1/baz.ok')
+    m = pynappl.FileManager(self.dirname, True)
+    summary = m.summary()
+    self.assertEqual( self.dirname  + " contains 3 files: 1 failed, 2 succeeded, 0 new", summary )
 
 
 if __name__ == "__main__":

@@ -40,6 +40,10 @@ def suite():
 
                             , unittest.TestLoader().loadTestsFromTestCase(file_manager_test.ListTestCase)
                             , unittest.TestLoader().loadTestsFromTestCase(file_manager_test.ListNewTestCase)
+                            , unittest.TestLoader().loadTestsFromTestCase(file_manager_test.ProcessTestCase)
+                            , unittest.TestLoader().loadTestsFromTestCase(file_manager_test.ListFailuresTestCase)
+                            , unittest.TestLoader().loadTestsFromTestCase(file_manager_test.ListSuccessesTestCase)
+                            , unittest.TestLoader().loadTestsFromTestCase(file_manager_test.SummaryTestCase)
                             ])
 
 

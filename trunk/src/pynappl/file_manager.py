@@ -19,22 +19,21 @@ import glob
 import os, os.path
 
 class FileManager():
-  def __init__(self, store, directory_name, ok_suffix='ok', fail_suffix='fail'):
-    self.store = store
+  def __init__(self, directory_name, recursive = False, ok_suffix='ok', fail_suffix='fail'):
     self.dirname = directory_name
     self.ok_suffix = ok_suffix
     self.fail_suffix = fail_suffix
+    self.recursive = recursive
     
-  def store(self,recursive=False):
-    """Store all files that match the file name in directory"""
-    for filename in self.list_new(recursive):
-      file = open(filename, "r")
-      store_file(file, filename)
+  def process(self):
+    """Process all files that match the file name in directory"""
+    for filename in self.list_new():
+      self.process_file(file, filename)
 
-  def list(self,recursive=False): 
+  def list(self): 
     """List all files in directory that do not end with ok_suffix or fail_suffix"""
     files = []
-    if recursive:
+    if self.recursive:
       for root, dirs, files_found in os.walk(self.dirname):
         for filename in files_found:
           full_filename = os.path.join(root, filename)
@@ -49,10 +48,10 @@ class FileManager():
 
     return files
 
-  def list_new(self,recursive=False):
+  def list_new(self):
     """List all files in directory that don't have a ok or fail file"""
     files = []
-    for filename in self.list(recursive):
+    for filename in self.list():
       ok_filename = self.ok_filename(filename)
       fail_filename = self.fail_filename(filename)
       if not os.path.exists(ok_filename) and not os.path.exists(fail_filename):
@@ -66,6 +65,32 @@ class FileManager():
   def fail_filename(self, filename):
     return filename + '.' + self.fail_suffix
     
-  def store_file(self, file, filename):
+  def process_file(self, file, filename):
     pass
   
+  def list_failures(self):
+    """List all files marked as failing"""
+    files = []
+    for filename in self.list():
+      if os.path.exists(self.fail_filename(filename)):
+        files.append(filename)
+
+    return files
+    
+  def list_successes(self):
+    """List all files marked as ok"""
+    files = []
+    for filename in self.list():
+      if os.path.exists(self.ok_filename(filename)):
+        files.append(filename)
+
+    return files
+    
+  def summary(self):
+    """Produce a summary of progress"""
+    new = self.list_new()
+    failures = self.list_failures()
+    successes = self.list_successes()
+    total = len(new) + len(failures) + len(successes)
+
+    return "%s contains %s files: %s failed, %s succeeded, %s new" % (self.dirname, total, len(failures), len(successes), len(new))
