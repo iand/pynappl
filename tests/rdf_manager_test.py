@@ -16,4 +16,33 @@
 
 import unittest
 import pynappl
+import os, os.path
+from file_manager_test import FileManagerTestCase
+
+
+class RecordingStore(pynappl.Store):
+  """An instrumented version of Store that records calls to  store_file"""
+  
+  def __init__(self):
+    pynappl.Store.__init__(self, 'http://example.com/recordingstore')
+    self.files_processed = []
+  
+  def store_file(self, filename):
+    self.files_processed.append(filename)
+
+
+class ProcessFileTestCase(FileManagerTestCase):
+  
+  def test_list_non_recursive_empty_dir(self):
+    self.add_file('foo')
+    self.add_file('bar')
+
+    store = RecordingStore()
+    m = pynappl.RDFManager(store, self.dirname, False)
+    m.process()
+
+    self.assertEqual( 2, len(store.files_processed) )
+    self.assertTrue( os.path.join(self.dirname, 'foo') in store.files_processed )
+    self.assertTrue( os.path.join(self.dirname, 'bar') in store.files_processed )
+
 

@@ -44,11 +44,12 @@ class Store:
       
       return self.client.request(req_uri, "POST", body=data, headers={"accept" : "*/*", 'content-type':'application/rdf+xml'})
     
-    def store_file(self, file, graph_name=None):
+    def store_file(self, filename, graph_name=None):
       """Store the contents of a File (file-like object) in the Metabox associated with this store
          The client does not support streaming submissions of data, so the stream will be fully read before data is submitted to the platform
          file:: an IO object      
       """
+      file = open(filename, 'r')
       data = file.read()
       file.close()
       return self.store_data(data, graph_name)

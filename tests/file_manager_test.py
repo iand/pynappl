@@ -71,6 +71,17 @@ class ListTestCase(FileManagerTestCase):
     files = m.list()
     self.assertEqual(2, len(files))
 
+  def test_list_non_recursive_uses_filename_filter(self):
+    self.add_dir('dir1')
+    self.add_file('foo')
+    self.add_file('bar.rdf.fail')
+    self.add_file('bar.rdf')
+    self.add_file('dir1/baz.rdf')
+    m = pynappl.FileManager(self.dirname, False, '\.rdf$')
+    files = m.list()
+    self.assertEqual(1, len(files))
+
+
   def test_list_recursive_empty_dir(self):
     self.add_dir('dir1')
     self.add_dir('dir2')
@@ -107,6 +118,15 @@ class ListTestCase(FileManagerTestCase):
     files = m.list()
     self.assertEqual(2, len(files))
 
+  def test_list_recursive_uses_filename_filter(self):
+    self.add_dir('dir1')
+    self.add_file('foo')
+    self.add_file('bar.rdf.fail')
+    self.add_file('bar.rdf')
+    self.add_file('dir1/baz.rdf')
+    m = pynappl.FileManager(self.dirname, True, '\.rdf$')
+    files = m.list()
+    self.assertEqual(2, len(files))
 
 
 class ListNewTestCase(FileManagerTestCase):
@@ -179,8 +199,8 @@ class ListNewTestCase(FileManagerTestCase):
 class RecordingFileManager(pynappl.FileManager):
   """An instrumented version of FileManager that records which files were processed"""
   
-  def __init__(self, directory_name, recursive= False, ok_suffix='ok', fail_suffix='fail'):
-    pynappl.FileManager.__init__(self, directory_name, recursive, ok_suffix='ok', fail_suffix='fail')
+  def __init__(self, directory_name, recursive= False, filename_filter = None, ok_suffix='ok', fail_suffix='fail'):
+    pynappl.FileManager.__init__(self, directory_name, recursive, filename_filter, ok_suffix, fail_suffix)
     self.files_processed = []
   
   def process_file(self, filename):
