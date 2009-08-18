@@ -26,9 +26,9 @@ class FileManager():
     self.recursive = recursive
     
   def process(self):
-    """Process all files that match the file name in directory"""
+    """Process all files in directory"""
     for filename in self.list_new():
-      self.process_file(file, filename)
+      self.process_file(filename)
 
   def list(self): 
     """List all files in directory that do not end with ok_suffix or fail_suffix"""
@@ -65,7 +65,7 @@ class FileManager():
   def fail_filename(self, filename):
     return filename + '.' + self.fail_suffix
     
-  def process_file(self, file, filename):
+  def process_file(self, filename):
     pass
   
   def list_failures(self):
@@ -94,3 +94,25 @@ class FileManager():
     total = len(new) + len(failures) + len(successes)
 
     return "%s contains %s files: %s failed, %s succeeded, %s new" % (self.dirname, total, len(failures), len(successes), len(new))
+  
+  def reset(self):
+    """Remove all failure and success files"""
+    files = []
+    if self.recursive:
+      for root, dirs, files_found in os.walk(self.dirname):
+        for filename in files_found:
+          full_filename = os.path.join(root, filename)
+          if os.path.isfile(full_filename) and (full_filename.endswith("." + self.ok_suffix) or full_filename.endswith("." + self.fail_suffix)):
+            os.remove(full_filename)
+    else:
+      for filename in os.listdir(self.dirname):
+        full_filename = os.path.join(self.dirname, filename)
+        if os.path.isfile(full_filename) and (full_filename.endswith("." + self.ok_suffix) or full_filename.endswith("." + self.fail_suffix)):
+          os.remove(full_filename)
+    
+    
+  def retry_failures(self):
+    """Process all files marked as failure in directory"""
+    for filename in self.list_failures():
+      os.remove(self.fail_filename(filename))
+      self.process_file(filename)

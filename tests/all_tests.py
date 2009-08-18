@@ -44,6 +44,8 @@ def suite():
                             , unittest.TestLoader().loadTestsFromTestCase(file_manager_test.ListFailuresTestCase)
                             , unittest.TestLoader().loadTestsFromTestCase(file_manager_test.ListSuccessesTestCase)
                             , unittest.TestLoader().loadTestsFromTestCase(file_manager_test.SummaryTestCase)
+                            , unittest.TestLoader().loadTestsFromTestCase(file_manager_test.ResetTestCase)
+                            , unittest.TestLoader().loadTestsFromTestCase(file_manager_test.RetryFailuresTestCase)
                             ])
 
 
