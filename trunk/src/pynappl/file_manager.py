@@ -14,8 +14,9 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
 
+__all__ = ["FileManager"]
+
 import pynappl
-import glob
 import os, os.path
 import re
 
@@ -33,7 +34,15 @@ class FileManager():
   def process(self):
     """Process all files in directory"""
     for filename in self.list_new():
-      self.process_file(filename)
+      res = self.process_file(filename)
+      if res:
+        f = open(self.fail_filename(filename), "w")
+        f.write(res)
+        f.close()
+      else:
+        f = open(self.ok_filename(filename), "w")
+        f.write("OK")
+        f.close()
 
   def list(self): 
     """List all files in directory that do not end with ok_suffix or fail_suffix"""

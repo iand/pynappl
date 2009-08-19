@@ -206,7 +206,27 @@ class RecordingFileManager(pynappl.FileManager):
   def process_file(self, filename):
     self.files_processed.append(filename)
 
+class FailingFileManager(pynappl.FileManager):
+  """An instrumented version of FileManager that always fails to process a file"""
+  
+  def __init__(self, directory_name, recursive= False, filename_filter = None, ok_suffix='ok', fail_suffix='fail'):
+    pynappl.FileManager.__init__(self, directory_name, recursive, filename_filter, ok_suffix, fail_suffix)
+    self.files_processed = []
+  
+  def process_file(self, filename):
+    self.files_processed.append(filename)
+    return "%s failed" % filename
 
+class SucceedingFileManager(pynappl.FileManager):
+  """An instrumented version of FileManager that always succeeds processing a file"""
+  
+  def __init__(self, directory_name, recursive= False, filename_filter = None, ok_suffix='ok', fail_suffix='fail'):
+    pynappl.FileManager.__init__(self, directory_name, recursive, filename_filter, ok_suffix, fail_suffix)
+    self.files_processed = []
+  
+  def process_file(self, filename):
+    self.files_processed.append(filename)
+    return ""
 
 class ProcessTestCase(FileManagerTestCase):
 
@@ -233,6 +253,64 @@ class ProcessTestCase(FileManagerTestCase):
     self.assertTrue( os.path.join(self.dirname, 'foo') in m.files_processed )
     self.assertTrue( os.path.join(self.dirname, 'bar') in m.files_processed )
     self.assertTrue( os.path.join(self.dirname, 'dir1/baz') in m.files_processed )
+
+  def test_process_writes_fail_file(self):
+    self.add_file('foo')
+    m = FailingFileManager(self.dirname, False)
+    m.process()
+    self.assertEqual( 1, len(m.files_processed) )
+    self.assertTrue( os.path.join(self.dirname, 'foo') in m.files_processed )
+    self.assertTrue( os.path.exists(os.path.join(self.dirname, 'foo.fail')) )
+    f = open(os.path.join(self.dirname, 'foo.fail'), "r")
+    self.assertEqual( "%s failed" % os.path.join(self.dirname, 'foo'), f.read())
+    f.close()
+  
+  def test_process_writes_ok_file(self):
+    self.add_file('foo')
+    m = SucceedingFileManager(self.dirname, False)
+    m.process()
+    self.assertEqual( 1, len(m.files_processed) )
+    self.assertTrue( os.path.join(self.dirname, 'foo') in m.files_processed )
+    self.assertTrue( os.path.exists(os.path.join(self.dirname, 'foo.ok')) )
+    f = open(os.path.join(self.dirname, 'foo.ok'), "r")
+    self.assertEqual( "OK", f.read())
+    f.close()
+
+  def test_process_writes_fail_file_recursive(self):
+    self.add_file('foo')
+    self.add_dir('bar')
+    self.add_file('bar/spam')
+    m = FailingFileManager(self.dirname, True)
+    m.process()
+    self.assertEqual( 2, len(m.files_processed) )
+    self.assertTrue( os.path.join(self.dirname, 'foo') in m.files_processed )
+    self.assertTrue( os.path.join(self.dirname, 'bar/spam') in m.files_processed )
+    self.assertTrue( os.path.exists(os.path.join(self.dirname, 'foo.fail')) )
+    self.assertTrue( os.path.exists(os.path.join(self.dirname, 'bar/spam.fail')) )
+    f = open(os.path.join(self.dirname, 'foo.fail'), "r")
+    self.assertEqual( "%s failed" % os.path.join(self.dirname, 'foo'), f.read())
+    f.close()
+    f = open(os.path.join(self.dirname, 'bar/spam.fail'), "r")
+    self.assertEqual( "%s failed" % os.path.join(self.dirname, 'bar/spam'), f.read())
+    f.close()
+  
+  def test_process_writes_ok_file_recursive(self):
+    self.add_file('foo')
+    self.add_dir('bar')
+    self.add_file('bar/spam')
+    m = SucceedingFileManager(self.dirname, True)
+    m.process()
+    self.assertEqual( 2, len(m.files_processed) )
+    self.assertTrue( os.path.join(self.dirname, 'foo') in m.files_processed )
+    self.assertTrue( os.path.join(self.dirname, 'bar/spam') in m.files_processed )
+    self.assertTrue( os.path.exists(os.path.join(self.dirname, 'foo.ok')) )
+    self.assertTrue( os.path.exists(os.path.join(self.dirname, 'bar/spam.ok')) )
+    f = open(os.path.join(self.dirname, 'foo.ok'), "r")
+    self.assertEqual( "OK", f.read())
+    f.close()
+    f = open(os.path.join(self.dirname, 'bar/spam.ok'), "r")
+    self.assertEqual( "OK", f.read())
+    f.close()
 
 class ListFailuresTestCase(FileManagerTestCase):
 
