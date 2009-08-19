@@ -515,6 +515,40 @@ class StoreUrlTestCase(unittest.TestCase):
     self.assertTrue(self.is_isomorphic(body))
 
 
+class AuthenticationTestCase(unittest.TestCase):
+  def test_credentials_set_on_client(self):
+    client = MockHttp()
+    store = pynappl.Store('http://example.com/store', client=client, username='scooby', password='mystery')
+    self.assertEqual('scooby', client.username)
+    self.assertEqual('mystery', client.password)
+
+  def test_credentials_needs_username(self):
+    client = MockHttp()
+    store = pynappl.Store('http://example.com/store', client=client, password='mystery')
+    self.assertTrue(client.username is None)
+    self.assertTrue(client.password is None)
+
+  def test_credentials_needs_password(self):
+    client = MockHttp()
+    store = pynappl.Store('http://example.com/store', client=client, username='scooby')
+    self.assertTrue(client.username is None)
+    self.assertTrue(client.password is None)
+
+
+class UriTestCase(unittest.TestCase):
+  def test_uri_is_stored(self):
+    client = MockHttp()
+    store = pynappl.Store('http://example.com/store', client=client)
+    self.assertEqual('http://example.com/store', store.uri)
+
+  def test_trailing_slash_on_uri_is_removed(self):
+    client = MockHttp()
+    store = pynappl.Store('http://example.com/store/', client=client)
+    self.assertEqual('http://example.com/store', store.uri)
+
+
+
+
 if __name__ == "__main__":
   unittest.main()
 

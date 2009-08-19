@@ -35,6 +35,8 @@ def suite():
                             , unittest.TestLoader().loadTestsFromTestCase(store_test.StoreFileTestCase)
                             , unittest.TestLoader().loadTestsFromTestCase(store_test.StoreGraphTestCase)
                             , unittest.TestLoader().loadTestsFromTestCase(store_test.StoreUrlTestCase)
+                            , unittest.TestLoader().loadTestsFromTestCase(store_test.AuthenticationTestCase)
+                            , unittest.TestLoader().loadTestsFromTestCase(store_test.UriTestCase)
 
                             , unittest.TestLoader().loadTestsFromTestCase(job_test.ParseTestCase)
 
