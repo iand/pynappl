@@ -20,6 +20,8 @@ class MockHttp(httplib2.Http):
   def __init__(self):
     self.responses = {}
     self.requests = {}
+    self.username = None
+    self.password = None
 
   def register(self, method, uri, body = '', response = httplib2.Response({})):
     self.responses[(method.lower(), uri)] = (response, body)
@@ -36,3 +38,7 @@ class MockHttp(httplib2.Http):
     
   def get_request(self, method, uri):
     return self.requests[(method.lower(), uri)]
+
+  def add_credentials(self, username, password):
+    self.username = username
+    self.password = password

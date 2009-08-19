@@ -23,14 +23,17 @@ import datetime as dt
 import pynappl
 
 class Store:
-    def __init__(self,uri, user = None, pwd = None, client = None):
+    def __init__(self,uri, username = None, password = None, client = None):
       if client is None:
         self.client = httplib2.Http()
       else:
         self.client = client
-      self.storeuri = uri
-      self.user = user
-      self.pwd = pwd
+        
+      if password is not None and username is not None:
+        self.client.add_credentials(username, password)
+
+      self.uri = uri.endswith("/") and uri[:-1] or uri
+      self.username = username
 
     def store_data(self, data, graph_name=None):
       """Store some RDF in the Metabox associated with this store. Default is to store the
@@ -72,12 +75,12 @@ class Store:
       """Build a request uri, by concatenating it with the base uri of the store
           uri:: relative URI to store service, e.g. "/service/sparql"
       """
-      if (uri.startswith(self.storeuri)):
+      if (uri.startswith(self.uri)):
         return uri
       if uri.startswith("/"):
-        return self.storeuri + uri
+        return self.uri + uri
       else:
-        return self.storeuri + "/" + uri
+        return self.uri + "/" + uri
 
 
     def get_jobs(self):
