@@ -199,8 +199,8 @@ class ListNewTestCase(FileManagerTestCase):
 class RecordingFileManager(pynappl.FileManager):
   """An instrumented version of FileManager that records which files were processed"""
   
-  def __init__(self, directory_name, recursive= False, filename_filter = None, ok_suffix='ok', fail_suffix='fail'):
-    pynappl.FileManager.__init__(self, directory_name, recursive, filename_filter, ok_suffix, fail_suffix)
+  def __init__(self, directory_name, recursive= False, filename_filter = None, ok_suffix='ok', fail_suffix='fail', callback=None):
+    pynappl.FileManager.__init__(self, directory_name, recursive, filename_filter, ok_suffix, fail_suffix, callback)
     self.files_processed = []
   
   def process_file(self, filename):
@@ -209,8 +209,8 @@ class RecordingFileManager(pynappl.FileManager):
 class FailingFileManager(pynappl.FileManager):
   """An instrumented version of FileManager that always fails to process a file"""
   
-  def __init__(self, directory_name, recursive= False, filename_filter = None, ok_suffix='ok', fail_suffix='fail'):
-    pynappl.FileManager.__init__(self, directory_name, recursive, filename_filter, ok_suffix, fail_suffix)
+  def __init__(self, directory_name, recursive= False, filename_filter = None, ok_suffix='ok', fail_suffix='fail', callback=None):
+    pynappl.FileManager.__init__(self, directory_name, recursive, filename_filter, ok_suffix, fail_suffix, callback)
     self.files_processed = []
   
   def process_file(self, filename):
@@ -220,8 +220,8 @@ class FailingFileManager(pynappl.FileManager):
 class SucceedingFileManager(pynappl.FileManager):
   """An instrumented version of FileManager that always succeeds processing a file"""
   
-  def __init__(self, directory_name, recursive= False, filename_filter = None, ok_suffix='ok', fail_suffix='fail'):
-    pynappl.FileManager.__init__(self, directory_name, recursive, filename_filter, ok_suffix, fail_suffix)
+  def __init__(self, directory_name, recursive= False, filename_filter = None, ok_suffix='ok', fail_suffix='fail', callback=None):
+    pynappl.FileManager.__init__(self, directory_name, recursive, filename_filter, ok_suffix, fail_suffix, callback)
     self.files_processed = []
   
   def process_file(self, filename):
@@ -310,6 +310,30 @@ class ProcessTestCase(FileManagerTestCase):
     f.close()
     f = open(os.path.join(self.dirname, 'bar/spam.ok'), "r")
     self.assertEqual( "OK", f.read())
+    f.close()
+
+class ProcessCallbackTestCase(FileManagerTestCase):
+  def callback(self, filename):
+    self.flag = True
+  
+  def error_callback(self, filename):
+    return "Fake error"
+  
+  def test_process_runs_callback(self):
+    self.flag = False
+    self.add_file('foo')
+    m = pynappl.FileManager(self.dirname, False, callback=self.callback)
+    m.process()
+    self.assertTrue(self.flag)
+    self.assertTrue(os.path.exists(os.path.join(self.dirname, "foo.ok")))
+  
+  def test_process_callback_returns_error(self):
+    self.add_file('foo')
+    m = pynappl.FileManager(self.dirname, False, callback=self.error_callback)
+    m.process()
+    self.assertTrue(os.path.exists(os.path.join(self.dirname, "foo.fail")))
+    f = open(os.path.join(self.dirname, "foo.fail"), "r")
+    self.assertEqual("Fake error", f.read())
     f.close()
 
 class ListFailuresTestCase(FileManagerTestCase):
