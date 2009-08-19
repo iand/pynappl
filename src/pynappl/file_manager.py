@@ -14,14 +14,14 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
 
-__all__ = ["FileManager"]
+__all__ = ["FileManager", "file_manager_main"]
 
 import pynappl
-import os, os.path
+import os
 import re
 
 class FileManager():
-  def __init__(self, directory_name, recursive = False, filename_filter = None, ok_suffix='ok', fail_suffix='fail'):
+  def __init__(self, directory_name, recursive = False, filename_filter = None, ok_suffix='ok', fail_suffix='fail', callback=None):
     self.dirname = directory_name
     self.ok_suffix = ok_suffix
     self.fail_suffix = fail_suffix
@@ -30,6 +30,7 @@ class FileManager():
       self.filename_filter = re.compile(filename_filter)
     else:
       self.filename_filter = None
+    self.callback = callback
     
   def process(self):
     """Process all files in directory"""
@@ -82,7 +83,8 @@ class FileManager():
     return filename + '.' + self.fail_suffix
     
   def process_file(self, filename):
-    pass
+    if self.callback is not None:
+      return self.callback(filename)
   
   def list_failures(self):
     """List all files marked as failing"""
@@ -132,3 +134,40 @@ class FileManager():
     for filename in self.list_failures():
       os.remove(self.fail_filename(filename))
       self.process_file(filename)
+
+class PrintingFileManager(FileManager):
+  def process_file(self, filename):
+    print "Processing '%s'" % filename
+
+def file_manager_main(cls=FileManager, callback=None):
+  import sys, getopt
+  directory = os.getcwd()
+  action = "process"
+  recursive = False
+  filter = None
+  ok_suffix = "ok"
+  fail_suffix = "fail"
+  opts, args = getopt.gnu_getopt(sys.argv[1:], "d:a:rF:o:f:", ["directory=", "action=", "recursive", "filter=", "ok-suffix=", "fail-suffix="])
+  for k, v in opts:
+    if k in ("-d", "--directory"):
+      directory = v
+    elif k in ("-a", "--action"):
+      if v in ["process", "list", "list-new", "list-failures", "list-successes", "summary", "reset", "retry-failures"]:
+         action = v.replace("-", "_")
+    elif k in ("-r", "--recursive"):
+      recursive = True
+    elif k in ("-F", "--filter"):
+      filter = v
+    elif k in ("-o", "--ok-suffix"):
+      ok_suffix = v
+    elif k in ("-f", "--fail-suffix"):
+      fail_suffix = v
+  fm = cls(directory, recursive, filter, ok_suffix, fail_suffix, callback)
+  res = getattr(fm, action)()
+  if isinstance(res, list):
+    for item in res:
+      print item
+  elif res is not None:
+    print res
+if __name__ == "__main__":
+  file_manager_main(PrintingFileManager)
