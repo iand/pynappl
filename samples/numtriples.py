@@ -1,4 +1,4 @@
-""" Uses FileManager tp list RDF files and the number of triples in each
+""" Uses FileManager to list RDF files and the number of triples in each
 Uses the same interface as FileManager"""
 
 import pynappl
@@ -14,7 +14,7 @@ def callback(filename):
 	print "%s has %d triples" % (filename, ntriples)
 
 def main():
-	pynappl.file_manager_main(callback=callback)
+	pynappl.file_manager_main(callback=callback, filter=r"\.rdf$")
 
 if __name__ == "__main__":
 	main()
