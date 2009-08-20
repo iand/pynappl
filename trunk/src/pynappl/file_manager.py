@@ -139,12 +139,11 @@ class PrintingFileManager(FileManager):
   def process_file(self, filename):
     print "Processing '%s'" % filename
 
-def file_manager_main(cls=FileManager, callback=None):
+def file_manager_main(cls=FileManager, callback=None, filter=None):
   import sys, getopt
   directory = os.getcwd()
   action = "process"
   recursive = False
-  filter = None
   ok_suffix = "ok"
   fail_suffix = "fail"
   opts, args = getopt.gnu_getopt(sys.argv[1:], "d:a:rF:o:f:", ["directory=", "action=", "recursive", "filter=", "ok-suffix=", "fail-suffix="])
@@ -153,7 +152,9 @@ def file_manager_main(cls=FileManager, callback=None):
       directory = v
     elif k in ("-a", "--action"):
       if v in ["process", "list", "list-new", "list-failures", "list-successes", "summary", "reset", "retry-failures"]:
-         action = v.replace("-", "_")
+        action = v.replace("-", "_")
+      else:
+        print "Warning: Invalid action: %s" % action
     elif k in ("-r", "--recursive"):
       recursive = True
     elif k in ("-F", "--filter"):
