@@ -18,7 +18,8 @@ import unittest
 import pynappl
 import tempfile
 from mock_store import MockStore
-import os, os.path
+import os
+import shutil
 
 
 class FileManagerTestCase(unittest.TestCase):
@@ -26,13 +27,8 @@ class FileManagerTestCase(unittest.TestCase):
     self.dirname = tempfile.mkdtemp()
   
   def tearDown(self):
-    for root, dirs, files in os.walk(self.dirname, topdown=False):
-      for name in files:
-          os.remove(os.path.join(root, name))
-      for name in dirs:
-          os.rmdir(os.path.join(root, name))
-    os.rmdir(self.dirname)
-    
+    shutil.rmtree(self.dirname)
+  
   def add_file(self, filename, data='dummy data'):
     file = open(os.path.join(self.dirname, filename), 'w')
     file.write(data)
