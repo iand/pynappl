@@ -114,26 +114,22 @@ class Store:
 
 		def schedule_reset(self, time=dt.datetime.utcnow(), label='Reset data job created by pynappl client'):
 			"""Schedule an offline job to reset the data in a store"""
-			self.schedule_job(pynappl.JOB_TYPE_RESET, time, label)
+			return self.schedule_job(pynappl.JOB_TYPE_RESET, time, label)
 			
 		def schedule_snapshot(self, time=dt.datetime.utcnow(), label='Snapshot job created by pynappl client'):
 			"""Schedule an offline job to create a snapshot of the data in a store"""
-			self.schedule_job(pynappl.JOB_TYPE_SNAPSHOT, time, label)
+			return self.schedule_job(pynappl.JOB_TYPE_SNAPSHOT, time, label)
 
 		def schedule_reindex(self, time=dt.datetime.utcnow(), label='Snapshot job created by pynappl client'):
 			"""Schedule an offline job to reindex the data in a store"""
-			self.schedule_job(pynappl.JOB_TYPE_REINDEX, time, label)
+			return self.schedule_job(pynappl.JOB_TYPE_REINDEX, time, label)
 
 		def schedule_restore(self, snapshot_uri, time=dt.datetime.utcnow(), label='Snapshot job created by pynappl client'):
 			"""Schedule an offline job to restore a snapshot to a store"""
-			self.schedule_job(pynappl.JOB_TYPE_RESTORE, time, label, snapshot_uri)
+			return self.schedule_job(pynappl.JOB_TYPE_RESTORE, time, label, snapshot_uri)
 			
 		def read_job(self, uri):
-			(response, body) = self.client.request(uri, "GET", headers={"accept" : "application/rdf+xml"})
-			if response.status > 299:
-				raise "Unable to read job from store. Response was %s %s " % (response.status, response.reason) 
-
-			return pynappl.Job.parse(uri, body)
+			return self.client.request(uri, "GET", headers={"accept" : "application/rdf+xml"})
 			
 		def is_writeable(self):
 			req_uri = self.build_uri("/config/access-status")
@@ -156,3 +152,26 @@ class Store:
 				return len(access_status_values) > 0 and (str(access_status_values[0]) == 'http://schemas.talis.com/2006/bigfoot/statuses#read-write' or str(access_status_values[0]) == 'http://schemas.talis.com/2006/bigfoot/statuses#read-only')
 
 			return False
+
+		def status(self):
+			req_uri = self.build_uri("/config/access-status")
+			(response, body) = self.client.request(req_uri, "GET", headers={"accept" : "application/rdf+xml"}, )
+			if response.status < 300:
+				g = rdflib.ConjunctiveGraph();
+				g.parse(StringIO(body), format="xml")
+				status = "store is "
+				access_status_values = list(g.objects(subject = rdflib.URIRef(req_uri), predicate = rdflib.URIRef('http://schemas.talis.com/2006/bigfoot/configuration#accessMode')))
+				if len(access_status_values) > 0:
+					if str(access_status_values[0]) == 'http://schemas.talis.com/2006/bigfoot/statuses#read-write':
+						status += "read/write"
+					elif str(access_status_values[0]) == 'http://schemas.talis.com/2006/bigfoot/statuses#read-only':
+						status += "read only"
+					elif str(access_status_values[0]) == 'http://schemas.talis.com/2006/bigfoot/statuses#unavailable':
+						status += "unavailable"
+					else:
+						status = "in an unknown status"
+				access_status_messages = list(g.objects(subject = rdflib.URIRef(req_uri), predicate = rdflib.URIRef('http://schemas.talis.com/2006/bigfoot/configuration#statusMessage')))
+				if len(access_status_messages) > 0 and len(str(access_status_messages[0])) > 0:
+						status += " (" + str(access_status_messages[0]) + ")"
+				return status
+			return None

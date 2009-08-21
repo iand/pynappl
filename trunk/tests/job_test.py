@@ -18,16 +18,36 @@ import unittest
 import pynappl
 import time
 
-TEST_URI = "http://example.com/store/jobs/a193f791-b29e-4802-b54e-0d8587d747b3"
+TEST_URI = "http://example.com/store/jobs/job1"
 TEST_DATA = """<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:j.0="http://purl.org/dc/terms/" xmlns:j.1="http://schemas.talis.com/2006/bigfoot/configuration#" xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#"> 
-  <rdf:Description rdf:about="http://example.com/store/jobs/a193f791-b29e-4802-b54e-0d8587d747b3/767238a2-7309-424c-ab20-a40fb457c042">
-    <j.1:progressUpdateTime rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2009-08-12T01:19:12Z</j.1:progressUpdateTime>
-    <j.1:progressUpdateMessage>Reset Data job running for store.</j.1:progressUpdateMessage>
+  <rdf:Description rdf:about="http://example.com/store/jobs/job1/progress2">
+    <j.1:progressUpdateTime rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2009-08-12T01:25:12Z</j.1:progressUpdateTime>
+    <j.1:progressUpdateMessage>progress 2</j.1:progressUpdateMessage>
   </rdf:Description>
-  <rdf:Description rdf:about="http://example.com/store/jobs/a193f791-b29e-4802-b54e-0d8587d747b3">
+  <rdf:Description rdf:about="http://example.com/store/jobs/job1/progress1">
+    <j.1:progressUpdateTime rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2009-08-12T01:19:12Z</j.1:progressUpdateTime>
+    <j.1:progressUpdateMessage>progress 1</j.1:progressUpdateMessage>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://example.com/store/jobs/job1">
     <j.1:startTime rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2007-05-02T14:14:00Z</j.1:startTime>
     <rdfs:label>My Reset Data Job</rdfs:label>
-    <j.1:progressUpdate rdf:resource="http://example.com/store/jobs/a193f791-b29e-4802-b54e-0d8587d747b3/767238a2-7309-424c-ab20-a40fb457c042"/>
+    <j.1:progressUpdate rdf:resource="http://example.com/store/jobs/job1/progress1"/>
+    <j.1:completionStatus rdf:resource="http://schemas.talis.com/2006/bigfoot/configuration#success"/>
+    <j.0:created rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2009-08-12T00:18:53Z</j.0:created>
+    <j.1:jobType rdf:resource="http://schemas.talis.com/2006/bigfoot/configuration#ResetDataJob"/>
+    <j.1:progressUpdate rdf:resource="http://example.com/store/jobs/job1/progress2"/>
+    <rdf:type rdf:resource="http://schemas.talis.com/2006/bigfoot/configuration#JobRequest"/>
+    <j.1:startMessage>ResetDataTask starting</j.1:startMessage>
+    <j.1:endTime rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2009-08-12T01:19:14Z</j.1:endTime>
+    <j.1:completionMessage>Reset store Complete.</j.1:completionMessage>
+    <j.1:actualStartTime rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2009-08-12T01:19:11Z</j.1:actualStartTime>
+  </rdf:Description>
+</rdf:RDF>"""
+
+TEST_DATA_NO_UPDATES = """<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:j.0="http://purl.org/dc/terms/" xmlns:j.1="http://schemas.talis.com/2006/bigfoot/configuration#" xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#"> 
+  <rdf:Description rdf:about="http://example.com/store/jobs/job1">
+    <j.1:startTime rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2007-05-02T14:14:00Z</j.1:startTime>
+    <rdfs:label>My Reset Data Job</rdfs:label>
     <j.1:completionStatus rdf:resource="http://schemas.talis.com/2006/bigfoot/configuration#success"/>
     <j.0:created rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2009-08-12T00:18:53Z</j.0:created>
     <j.1:jobType rdf:resource="http://schemas.talis.com/2006/bigfoot/configuration#ResetDataJob"/>
@@ -42,7 +62,7 @@ TEST_DATA = """<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" 
 class ParseTestCase(unittest.TestCase):
   def test_uri(self):
     job = pynappl.Job.parse(TEST_URI, TEST_DATA)
-    self.assertEqual("http://example.com/store/jobs/a193f791-b29e-4802-b54e-0d8587d747b3", job.uri)
+    self.assertEqual("http://example.com/store/jobs/job1", job.uri)
   
   def test_label(self):
     job = pynappl.Job.parse(TEST_URI, TEST_DATA)
@@ -75,12 +95,14 @@ class ParseTestCase(unittest.TestCase):
   
   def test_length_of_progress_updates(self):
     job = pynappl.Job.parse(TEST_URI, TEST_DATA)
-    self.assertEqual(1, len(job.progress_updates))
+    self.assertEqual(2, len(job.progress_updates))
   
-  def test_progress_update_message(self):
+  def test_progress_updates_sorted_by_time(self):
     job = pynappl.Job.parse(TEST_URI, TEST_DATA)
-    update = job.progress_updates[0]
-    self.assertEqual("Reset Data job running for store.", update.message)
+    update1 = job.progress_updates[0]
+    update2 = job.progress_updates[1]
+    self.assertEqual("progress 1", update1.message)
+    self.assertEqual("progress 2", update2.message)
   
   def test_progress_update_time(self):
     job = pynappl.Job.parse(TEST_URI, TEST_DATA)
@@ -99,5 +121,12 @@ class ParseTestCase(unittest.TestCase):
   def test_end_time(self):
     job = pynappl.Job.parse(TEST_URI, TEST_DATA)
     self.assertEqual((2009, 8, 12, 1, 19, 14, 2, 224, -1), job.end_time)
+
+  def test_no_progress_updates(self):
+    job = pynappl.Job.parse(TEST_URI, TEST_DATA_NO_UPDATES)
+    self.assertEqual(0, len(job.get_progress_updates()))
+
+
+
 if __name__ == "__main__":
   unittest.main()

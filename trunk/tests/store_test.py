@@ -52,7 +52,6 @@ JOB_DATA = """<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" x
 
 STORE_ACCESS_STATUS_RW = """<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:bf="http://schemas.talis.com/2006/bigfoot/configuration#"> 
   <rdf:Description rdf:about="http://example.com/store/config/access-status">
-    <bf:statusMessage>Store is writeable</bf:statusMessage>
     <bf:accessMode rdf:resource="http://schemas.talis.com/2006/bigfoot/statuses#read-write"/>
   </rdf:Description>
 </rdf:RDF>"""
@@ -60,7 +59,7 @@ STORE_ACCESS_STATUS_RW = """<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf
 STORE_ACCESS_STATUS_RO = """<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:bf="http://schemas.talis.com/2006/bigfoot/configuration#"> 
   <rdf:Description rdf:about="http://example.com/store/config/access-status">
     <bf:retryInterval>30</bf:retryInterval>
-    <bf:statusMessage>Store is read only</bf:statusMessage>
+    <bf:statusMessage>Being reindexed</bf:statusMessage>
     <bf:accessMode rdf:resource="http://schemas.talis.com/2006/bigfoot/statuses#read-only"/>
   </rdf:Description>
 </rdf:RDF>"""
@@ -68,7 +67,7 @@ STORE_ACCESS_STATUS_RO = """<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf
 STORE_ACCESS_STATUS_UN = """<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:bf="http://schemas.talis.com/2006/bigfoot/configuration#"> 
   <rdf:Description rdf:about="http://example.com/store/config/access-status">
     <bf:retryInterval>30</bf:retryInterval>
-    <bf:statusMessage>Store is unavailable</bf:statusMessage>
+    <bf:statusMessage>Offline for maintenance</bf:statusMessage>
     <bf:accessMode rdf:resource="http://schemas.talis.com/2006/bigfoot/statuses#unavailable"/>
   </rdf:Description>
 </rdf:RDF>"""
@@ -606,6 +605,35 @@ class AccessStatusTestCase(unittest.TestCase):
     store = pynappl.Store('http://example.com/store', client=client)
     self.assertFalse(store.is_readable())
 
+  def test_status_reports_read_write(self):
+    client = MockHttp()
+    client.register('get', 'http://example.com/store/config/access-status', STORE_ACCESS_STATUS_RW, httplib2.Response({'content-type':'application/rdf+xml'}))
+    store = pynappl.Store('http://example.com/store', client=client)
+    self.assertEqual("store is read/write", store.status())
+
+  def test_status_reports_read_only(self):
+    client = MockHttp()
+    client.register('get', 'http://example.com/store/config/access-status', STORE_ACCESS_STATUS_RO, httplib2.Response({'content-type':'application/rdf+xml'}))
+    store = pynappl.Store('http://example.com/store', client=client)
+    self.assertEqual("store is read only (Being reindexed)", store.status())
+
+  def test_status_reports_unavailable(self):
+    client = MockHttp()
+    client.register('get', 'http://example.com/store/config/access-status', STORE_ACCESS_STATUS_UN, httplib2.Response({'content-type':'application/rdf+xml'}))
+    store = pynappl.Store('http://example.com/store', client=client)
+    self.assertEqual("store is unavailable (Offline for maintenance)", store.status())
+
+  def test_status_ignores_empty_status_message(self):
+    client = MockHttp()
+    data = """<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:bf="http://schemas.talis.com/2006/bigfoot/configuration#"> 
+  <rdf:Description rdf:about="http://example.com/store/config/access-status">
+    <bf:statusMessage></bf:statusMessage>
+    <bf:accessMode rdf:resource="http://schemas.talis.com/2006/bigfoot/statuses#read-write"/>
+  </rdf:Description>
+</rdf:RDF>"""
+    client.register('get', 'http://example.com/store/config/access-status', data, httplib2.Response({'content-type':'application/rdf+xml'}))
+    store = pynappl.Store('http://example.com/store', client=client)
+    self.assertEqual("store is read/write", store.status())
 
 if __name__ == "__main__":
   unittest.main()
