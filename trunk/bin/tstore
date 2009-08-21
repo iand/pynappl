@@ -73,7 +73,12 @@ def main():
 		snapshot(store)
 	elif args[0] == "reindex":
 		reindex(store)
-
+	elif args[0] == "reset":
+		reset(store)
+	elif args[0] == "restore":
+		if url is None:
+			error("url not specified")
+		restore(store, url)
 	elif args[0] == "jobstatus":
 		if url is None:
 			error("url not specified")
@@ -95,7 +100,8 @@ Actions:
  reindex         schedule a store to be reindexed
  reset           schedule all data in a store to be deleted
  restore         schedule a snapshot to be uploaded into a store
- sparql          run a SPARQL query against the Platform
+ sample          show a sample of data from the store's metabox
+ sparql          run a SPARQL query against the store
  status          show read-write status of the store
  store           upload some RDF data to a store's metabox
  upload          upload some files to a store's contentbox
@@ -173,8 +179,14 @@ def status(store):
 	print store.status()
 
 def describe(store, url):
-	(response, body) = store.describe(url)
+	(response, body) = store.describe(url, True)
 	print body
+
+def sample(store):
+	(response, body) = store.select("select * where {?s a ?o} limit 10")
+	check_response(response)
+	print body
+
 
 def snapshot(store):
 	(response, body) = store.schedule_snapshot()
@@ -192,6 +204,22 @@ def reindex(store):
 	else:
 		print "Reindex job was probably scheduled but no URI was returned for it"
 
+def reset(store):
+	(response, body) = store.schedule_reset()
+	check_response(response)
+	if response.has_key('location'):
+		print "Reset data job scheduled, URI is: %s" % response['location']
+	else:
+		print "Reset data was probably scheduled but no URI was returned for it"
+
+def restore(store, url):
+	(response, body) = store.schedule_restore(url)
+	check_response(response)
+	if response.has_key('location'):
+		print "Restore job scheduled, URI is: %s" % response['location']
+	else:
+		print "Restore job was probably scheduled but no URI was returned for it"
+		
 def jobstatus(store, url):
 	(response, body) = store.read_job(url)
 	check_response(response)

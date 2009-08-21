@@ -96,7 +96,7 @@ class DescribeTestCase(unittest.TestCase):
   def test_describe_single_uri_performs_get_on_metabox(self):
     client = MockHttp()
     store = pynappl.Store('http://example.com/store', client=client)
-    resp = store.describe('http://example.com/foo')
+    resp = store.describe('http://example.com/foo', True)
     self.assertTrue(client.received_request('get', 'http://example.com/store/meta?about=' + urllib.quote_plus('http://example.com/foo')))
 
 class ReadJobTestCase(unittest.TestCase):
@@ -104,14 +104,14 @@ class ReadJobTestCase(unittest.TestCase):
     client = MockHttp()
     client.register("get", JOB_URI, JOB_DATA, httplib2.Response({'content-type':'application/rdf+xml'}))
     store = pynappl.Store('http://example.com/store', client=client)
-    job = store.read_job(JOB_URI)
+    job = store.read_job(JOB_URI, True)
     self.assertTrue(client.received_request('get', JOB_URI))
 
   def test_read_job_sets_accept(self):
     client = MockHttp()
     client.register("get", JOB_URI, JOB_DATA, httplib2.Response({'content-type':'application/rdf+xml'}))
     store = pynappl.Store('http://example.com/store', client=client)
-    job = store.read_job(JOB_URI)
+    job = store.read_job(JOB_URI, True)
 
     (headers, body) = client.get_request('get', JOB_URI)
     self.assertTrue(headers.has_key('accept'))
@@ -609,19 +609,22 @@ class AccessStatusTestCase(unittest.TestCase):
     client = MockHttp()
     client.register('get', 'http://example.com/store/config/access-status', STORE_ACCESS_STATUS_RW, httplib2.Response({'content-type':'application/rdf+xml'}))
     store = pynappl.Store('http://example.com/store', client=client)
-    self.assertEqual("store is read/write", store.status())
+    (response, body) = store.status()
+    self.assertEqual("store is read/write", body)
 
   def test_status_reports_read_only(self):
     client = MockHttp()
     client.register('get', 'http://example.com/store/config/access-status', STORE_ACCESS_STATUS_RO, httplib2.Response({'content-type':'application/rdf+xml'}))
     store = pynappl.Store('http://example.com/store', client=client)
-    self.assertEqual("store is read only (Being reindexed)", store.status())
+    (response, body) = store.status()
+    self.assertEqual("store is read only (Being reindexed)", body)
 
   def test_status_reports_unavailable(self):
     client = MockHttp()
     client.register('get', 'http://example.com/store/config/access-status', STORE_ACCESS_STATUS_UN, httplib2.Response({'content-type':'application/rdf+xml'}))
     store = pynappl.Store('http://example.com/store', client=client)
-    self.assertEqual("store is unavailable (Offline for maintenance)", store.status())
+    (response, body) = store.status()
+    self.assertEqual("store is unavailable (Offline for maintenance)", body)
 
   def test_status_ignores_empty_status_message(self):
     client = MockHttp()
@@ -633,7 +636,18 @@ class AccessStatusTestCase(unittest.TestCase):
 </rdf:RDF>"""
     client.register('get', 'http://example.com/store/config/access-status', data, httplib2.Response({'content-type':'application/rdf+xml'}))
     store = pynappl.Store('http://example.com/store', client=client)
-    self.assertEqual("store is read/write", store.status())
+    (response, body) = store.status()
+    self.assertEqual("store is read/write", body)
+
+class SparqlTestCase(unittest.TestCase):
+  """Test cases for sparql methods"""
+
+  def test_select_performs_get_on_sparql_service(self):
+    client = MockHttp()
+    store = pynappl.Store('http://example.com/store', client=client)
+    resp = store.describe('http://example.com/foo')
+    self.assertTrue(client.received_request('get', 'http://example.com/store/meta?about=' + urllib.quote_plus('http://example.com/foo')))
+
 
 if __name__ == "__main__":
   unittest.main()
