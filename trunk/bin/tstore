@@ -1,0 +1,227 @@
+#!/usr/bin/env python
+import sys, getopt, os
+import math,time
+import pynappl
+import re
+
+def main():
+	try:
+		opts, args = getopt.gnu_getopt(sys.argv[1:], "hs:r:u:p:f:", ["help", "store=", "url=", "username=", "password=", "file="])
+	except getopt.GetoptError, err:
+		# print help information and exit:
+		print str(err) # will print something like "option -a not recognized"
+		usage()
+		sys.exit(2)
+
+	if len(args) == 0:
+		error("required action missing")
+	elif len(args) > 1:
+		error("only one action can be specified")
+				
+	output = None
+	verbose = False
+	
+	store_uri = None
+	url = None
+	username = None
+	password = None
+	filename = None
+	
+	for o, v in opts:
+		if o in ("-s", "--store"):
+			store_uri = v
+			if not store_uri.startswith("http://"):
+				store_uri = "http://api.talis.com/stores/%s" % store_uri
+
+		elif o in ("-r", "--url"):
+			url = v
+
+		elif o in ("-u", "--username"):
+			username = v
+		elif o in ("-p", "--password"):
+			password = v
+		elif o in ("-f", "--file"):
+			filename = v
+		elif o in ("-h", "--help"):
+			usage()
+			sys.exit()
+		else:
+			assert False, "unhandled option"
+
+	if store_uri is None:
+		if url is not None and url.startswith('http://api.talis.com/stores/'):
+			url_info = re.match('(http://api.talis.com/stores/[a-z-]+)',url )
+			if url_info is not None:
+				store_uri = url_info.group(1)
+			else:
+				error("store not specified")
+		else:
+			error("store not specified")
+
+	store = pynappl.Store(store_uri, username, password)
+
+
+	if args[0] == "status":
+		status(store)
+			
+	elif args[0] == "describe":
+		if url is None:
+			error("url not specified")
+		describe(store, url)
+
+	elif args[0] == "snapshot":
+		snapshot(store)
+	elif args[0] == "reindex":
+		reindex(store)
+
+	elif args[0] == "jobstatus":
+		if url is None:
+			error("url not specified")
+		jobstatus(store, url)
+
+def error(msg):
+	print msg
+	usage()
+	sys.exit(2)
+
+def usage():
+	print """tstore: %s action [option]
+A simple command-line interface for working with a Talis Platform store
+Actions:
+ backup          take a snapshot of a store, wait for it to complete
+                 and then download it to the local system
+ describe        fetch the description of a resource
+ jobstatus       show the progress status of a scheduled job
+ reindex         schedule a store to be reindexed
+ reset           schedule all data in a store to be deleted
+ restore         schedule a snapshot to be uploaded into a store
+ sparql          run a SPARQL query against the Platform
+ status          show read-write status of the store
+ store           upload some RDF data to a store's metabox
+ upload          upload some files to a store's contentbox
+
+Options:
+ -h/--help       show this message
+ -u/--username   specify username
+ -p/--password   specify password
+ -s/--store      specify store name. Can be just name, or full URL
+ -r/--url        specify a url, e.g. for retrieving description or 
+                 uploading
+ -f/--file       specify a file name, e.g. data to upload, or a sparql
+                 query
+ --dir           specify a directory, e.g. containing data to upload
+                 or location to place data.
+ --traverse      recursively store files or RDF
+ --base          base path for uploading files to content box
+"""
+
+
+def relative_time(t,accuracy=2,cmp_time=None,alternative_past=None):
+		if cmp_time==None:
+				cmp_time = time.time()
+		diff_seconds = (t - cmp_time) + 20 # unknown why it's off by 20 seconds
+		diff_minutes = int(math.floor(diff_seconds/60))
+		relative_time = ""
+
+		sign = diff_minutes > 0
+		diff_minutes = math.fabs(diff_minutes)
+		# return in minutes
+		if diff_minutes > (60 * 24):
+				days = int(math.floor(diff_minutes / (60*24)))
+				relative_time = str(days) + " day"
+				if days != 1:
+					relative_time += "s"
+				if accuracy > 1:
+					relative_time +=" "+ str(int(math.floor((diff_minutes % (60*24))) / 60)) + " hours"
+		elif diff_minutes > 60 :
+				hrs = int(math.floor(diff_minutes / 60))
+				relative_time = str(hrs) + " hour"
+				if hrs != 1:
+					relative_time += "s"
+				if accuracy > 1:
+						relative_time +=" "+ str(int(diff_minutes % 60)) + " min"
+						if int(diff_minutes % 60) > 1:
+							relative_time +="s"
+		else:
+				relative_time = str(int(diff_minutes)) + " minute"
+				if int(diff_minutes) > 1:
+					relative_time +="s"
+
+		if sign:
+				relative_time = "in " + relative_time
+		else:
+				if alternative_past:
+						return alternative_past
+				relative_time += " ago"
+		return relative_time    
+
+
+
+def check_response(response):
+	if response.status < 300:
+		return
+	elif response.status == 401:
+		print "Username and/or password were not valid for this store"
+		sys.exit(2)
+	else:
+		print "There was an error processing the request: %s" % (response.status)
+		if len(body) > 0:
+			print body
+
+
+def status(store):
+	print store.status()
+
+def describe(store, url):
+	(response, body) = store.describe(url)
+	print body
+
+def snapshot(store):
+	(response, body) = store.schedule_snapshot()
+	check_response(response)
+	if response.has_key('location'):
+		print "Snapshot job scheduled, URI is: %s" % response['location']
+	else:
+		print "Snapshot job was probably scheduled but no URI was returned for it"
+
+def reindex(store):
+	(response, body) = store.schedule_reindex()
+	check_response(response)
+	if response.has_key('location'):
+		print "Reindex job scheduled, URI is: %s" % response['location']
+	else:
+		print "Reindex job was probably scheduled but no URI was returned for it"
+
+def jobstatus(store, url):
+	(response, body) = store.read_job(url)
+	check_response(response)
+	
+	job = pynappl.Job.parse(url, body)
+	
+	type = "Unknown job"
+	if job.type == 'http://schemas.talis.com/2006/bigfoot/configuration#SnapshotJob':
+		type = "Snapshot job"
+	elif job.type == 'http://schemas.talis.com/2006/bigfoot/configuration#ResetDataJob':
+		type = "Reset data job"
+	elif job.type == 'http://schemas.talis.com/2006/bigfoot/configuration#RestoreJob':
+		type = "Restore job"
+	elif job.type == 'http://schemas.talis.com/2006/bigfoot/configuration#ReindexJob':
+		type = "Reindex job"
+		
+	print "%s submitted %s, scheduled to run %s "  % (type, relative_time(time.mktime(job.created)), relative_time(time.mktime(job.start_time)))
+	if not job.has_started:
+		print "This job has not started yet"
+	else:
+		if job.has_completed:
+			if job.was_successful:
+				print "It actually started %s and completed successfully %s with a status of %s" % (relative_time(time.mktime(job.actual_start_time)), relative_time(time.mktime(job.actual_start_time)), job.completion_message)
+			else:
+				print "It actually started %s and FAILED %s with a status of %s" % (relative_time(time.mktime(job.actual_start_time)), relative_time(time.mktime(job.actual_start_time)), job.completion_message)
+				for update in job.progress_updates:
+					print "%s: %s" % (relative_time(time.mktime(update.time)), update.message)
+		else:
+			print "It actually started %s" % (relative_time(time.mktime(job.actual_start_time)))
+			for update in job.progress_updates:
+				print "%s: %s" % (relative_time(time.mktime(update.time)), update.message)
+if __name__ == "__main__":
+    main()
