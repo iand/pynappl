@@ -21,7 +21,7 @@ import urllib
 import rdflib
 import datetime as dt
 import pynappl
-from StringIO import StringIO
+import xml.etree.ElementTree as et
 
 class Store:
 		def __init__(self,uri, username = None, password = None, client = None):
@@ -91,7 +91,7 @@ class Store:
 		def response_body_as_graph(self, response, body, format="xml"):
 			g = rdflib.ConjunctiveGraph()
 			if response.status < 300:
-				g.parse(StringIO(body), format=format)
+				g.parse(rdflib.StringInputSource(body), format=format)
 			return (response, g)
 
 		def describe(self, uri, raw = False):
@@ -130,11 +130,11 @@ class Store:
 			"""Schedule an offline job to create a snapshot of the data in a store"""
 			return self.schedule_job(pynappl.JOB_TYPE_SNAPSHOT, time, label)
 
-		def schedule_reindex(self, time=dt.datetime.utcnow(), label='Snapshot job created by pynappl client'):
+		def schedule_reindex(self, time=dt.datetime.utcnow(), label='Reindex job created by pynappl client'):
 			"""Schedule an offline job to reindex the data in a store"""
 			return self.schedule_job(pynappl.JOB_TYPE_REINDEX, time, label)
 
-		def schedule_restore(self, snapshot_uri, time=dt.datetime.utcnow(), label='Snapshot job created by pynappl client'):
+		def schedule_restore(self, snapshot_uri, time=dt.datetime.utcnow(), label='Restore job created by pynappl client'):
 			"""Schedule an offline job to restore a snapshot to a store"""
 			return self.schedule_job(pynappl.JOB_TYPE_RESTORE, time, label, snapshot_uri)
 			
@@ -150,7 +150,7 @@ class Store:
 			(response, body) = self.client.request(req_uri, "GET", headers={"accept" : "application/rdf+xml"}, )
 			if response.status < 300:
 				g = rdflib.ConjunctiveGraph();
-				g.parse(StringIO(body), format="xml")
+				g.parse(rdflib.StringInputSource(body), format="xml")
 				access_status_values = list(g.objects(subject = rdflib.URIRef(req_uri), predicate = rdflib.URIRef('http://schemas.talis.com/2006/bigfoot/configuration#accessMode')))
 				return len(access_status_values) > 0 and str(access_status_values[0]) == 'http://schemas.talis.com/2006/bigfoot/statuses#read-write'
 
@@ -161,7 +161,7 @@ class Store:
 			(response, body) = self.client.request(req_uri, "GET", headers={"accept" : "application/rdf+xml"}, )
 			if response.status < 300:
 				g = rdflib.ConjunctiveGraph();
-				g.parse(StringIO(body), format="xml")
+				g.parse(rdflib.StringInputSource(body), format="xml")
 				access_status_values = list(g.objects(subject = rdflib.URIRef(req_uri), predicate = rdflib.URIRef('http://schemas.talis.com/2006/bigfoot/configuration#accessMode')))
 				return len(access_status_values) > 0 and (str(access_status_values[0]) == 'http://schemas.talis.com/2006/bigfoot/statuses#read-write' or str(access_status_values[0]) == 'http://schemas.talis.com/2006/bigfoot/statuses#read-only')
 
@@ -174,7 +174,7 @@ class Store:
 				return (response, body)
 			if response.status < 300:
 				g = rdflib.ConjunctiveGraph();
-				g.parse(StringIO(body), format="xml")
+				g.parse(rdflib.StringInputSource(body), format="xml")
 				status = "store is "
 				access_status_values = list(g.objects(subject = rdflib.URIRef(req_uri), predicate = rdflib.URIRef('http://schemas.talis.com/2006/bigfoot/configuration#accessMode')))
 				if len(access_status_values) > 0:
@@ -191,3 +191,34 @@ class Store:
 						status += " (" + str(access_status_messages[0]) + ")"
 				return (response, status)
 			return (response, "")
+		
+		def select(self, query, raw = False):
+			req_uri = self.build_uri("/services/sparql?query=" + urllib.quote_plus(query))
+			response, body = self.client.request(req_uri, "GET", headers={"accept" : "application/sparql-results+xml"})
+			if raw:
+				return response, body
+			if response.status in range(200, 300):
+				results = []
+				tree = et.fromstring(body)
+				for result in tree.find("{http://www.w3.org/2005/sparql-results#}results").findall("{http://www.w3.org/2005/sparql-results#}result"):
+					d = {}
+					for binding in result.findall("{http://www.w3.org/2005/sparql-results#}binding"):
+						name = binding.get("name")
+						value = None
+						uri = binding.find("{http://www.w3.org/2005/sparql-results#}uri")
+						if uri is None:
+							literal = binding.find("{http://www.w3.org/2005/sparql-results#}literal")
+							if literal is None:
+								bnode = binding.find("{http://www.w3.org/2005/sparql-results#}bnode")
+								if bnode is None:
+									raise PynapplError("SPARQL select result binding value is not a URI, Literal or BNode")
+								else:
+									value = rdflib.BNode(bnode)
+							else:
+								value = rdflib.Literal(literal)
+						else:
+							value = rdflib.URIRef(uri)
+						d[name] = value
+					results.append(d)
+				return response, results
+			return response, body
