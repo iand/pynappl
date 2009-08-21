@@ -50,6 +50,29 @@ JOB_DATA = """<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" x
   </rdf:Description>
 </rdf:RDF>"""
 
+STORE_ACCESS_STATUS_RW = """<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:bf="http://schemas.talis.com/2006/bigfoot/configuration#"> 
+  <rdf:Description rdf:about="http://example.com/store/config/access-status">
+    <bf:statusMessage>Store is writeable</bf:statusMessage>
+    <bf:accessMode rdf:resource="http://schemas.talis.com/2006/bigfoot/statuses#read-write"/>
+  </rdf:Description>
+</rdf:RDF>"""
+
+STORE_ACCESS_STATUS_RO = """<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:bf="http://schemas.talis.com/2006/bigfoot/configuration#"> 
+  <rdf:Description rdf:about="http://example.com/store/config/access-status">
+    <bf:retryInterval>30</bf:retryInterval>
+    <bf:statusMessage>Store is read only</bf:statusMessage>
+    <bf:accessMode rdf:resource="http://schemas.talis.com/2006/bigfoot/statuses#read-only"/>
+  </rdf:Description>
+</rdf:RDF>"""
+
+STORE_ACCESS_STATUS_UN = """<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:bf="http://schemas.talis.com/2006/bigfoot/configuration#"> 
+  <rdf:Description rdf:about="http://example.com/store/config/access-status">
+    <bf:retryInterval>30</bf:retryInterval>
+    <bf:statusMessage>Store is unavailable</bf:statusMessage>
+    <bf:accessMode rdf:resource="http://schemas.talis.com/2006/bigfoot/statuses#unavailable"/>
+  </rdf:Description>
+</rdf:RDF>"""
+
 
 class BuildUriTestCase(unittest.TestCase):
 
@@ -546,7 +569,42 @@ class UriTestCase(unittest.TestCase):
     store = pynappl.Store('http://example.com/store/', client=client)
     self.assertEqual('http://example.com/store', store.uri)
 
+class AccessStatusTestCase(unittest.TestCase):
+  def test_is_writeable_is_true_for_read_write_status(self):
+    client = MockHttp()
+    client.register('get', 'http://example.com/store/config/access-status', STORE_ACCESS_STATUS_RW, httplib2.Response({'content-type':'application/rdf+xml'}))
+    store = pynappl.Store('http://example.com/store', client=client)
+    self.assertTrue(store.is_writeable())
 
+  def test_is_writeable_is_false_for_read_only_status(self):
+    client = MockHttp()
+    client.register('get', 'http://example.com/store/config/access-status', STORE_ACCESS_STATUS_RO, httplib2.Response({'content-type':'application/rdf+xml'}))
+    store = pynappl.Store('http://example.com/store', client=client)
+    self.assertFalse(store.is_writeable())
+
+  def test_is_writeable_is_false_for_unavailable_status(self):
+    client = MockHttp()
+    client.register('get', 'http://example.com/store/config/access-status', STORE_ACCESS_STATUS_UN, httplib2.Response({'content-type':'application/rdf+xml'}))
+    store = pynappl.Store('http://example.com/store', client=client)
+    self.assertFalse(store.is_writeable())
+
+  def test_is_readable_is_true_for_read_write_status(self):
+    client = MockHttp()
+    client.register('get', 'http://example.com/store/config/access-status', STORE_ACCESS_STATUS_RW, httplib2.Response({'content-type':'application/rdf+xml'}))
+    store = pynappl.Store('http://example.com/store', client=client)
+    self.assertTrue(store.is_readable())
+
+  def test_is_readable_is_false_for_read_only_status(self):
+    client = MockHttp()
+    client.register('get', 'http://example.com/store/config/access-status', STORE_ACCESS_STATUS_RO, httplib2.Response({'content-type':'application/rdf+xml'}))
+    store = pynappl.Store('http://example.com/store', client=client)
+    self.assertTrue(store.is_readable())
+
+  def test_is_readable_is_false_for_unavailable_status(self):
+    client = MockHttp()
+    client.register('get', 'http://example.com/store/config/access-status', STORE_ACCESS_STATUS_UN, httplib2.Response({'content-type':'application/rdf+xml'}))
+    store = pynappl.Store('http://example.com/store', client=client)
+    self.assertFalse(store.is_readable())
 
 
 if __name__ == "__main__":
