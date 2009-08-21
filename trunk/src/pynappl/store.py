@@ -191,10 +191,13 @@ class Store:
 						status += " (" + str(access_status_messages[0]) + ")"
 				return (response, status)
 			return (response, "")
+
+		def sparql(self, query):
+			req_uri = self.build_uri("/services/sparql?query=" + urllib.quote_plus(query))
+			return self.client.request(req_uri, "GET", headers={"accept" : "application/rdf+xml,application/sparql-results+xml"})
 		
 		def select(self, query, raw = False):
-			req_uri = self.build_uri("/services/sparql?query=" + urllib.quote_plus(query))
-			response, body = self.client.request(req_uri, "GET", headers={"accept" : "application/sparql-results+xml"})
+			response, body = self.sparql(query)
 			if raw:
 				return response, body
 			if response.status in range(200, 300):

@@ -68,7 +68,12 @@ def main():
 		if url is None:
 			error("url not specified")
 		describe(store, url)
-
+	elif args[0] == "sample":
+		sample(store)
+	elif args[0] == "sampletype":
+		if url is None:
+			error("url of type not specified")
+		sampletype(store, url)
 	elif args[0] == "snapshot":
 		snapshot(store)
 	elif args[0] == "reindex":
@@ -77,7 +82,7 @@ def main():
 		reset(store)
 	elif args[0] == "restore":
 		if url is None:
-			error("url not specified")
+			error("url of snapshot not specified")
 		restore(store, url)
 	elif args[0] == "jobstatus":
 		if url is None:
@@ -101,6 +106,7 @@ Actions:
  reset           schedule all data in a store to be deleted
  restore         schedule a snapshot to be uploaded into a store
  sample          show a sample of data from the store's metabox
+ sampletype      show a sample of data pf the specified type
  sparql          run a SPARQL query against the store
  status          show read-write status of the store
  store           upload some RDF data to a store's metabox
@@ -185,7 +191,14 @@ def describe(store, url):
 def sample(store):
 	(response, body) = store.select("select * where {?s a ?o} limit 10")
 	check_response(response)
-	print body
+	for result in body:
+		print "%s (a %s)" % (str(result['s']), str(result['o']))
+
+def sampletype(store, url):
+	(response, body) = store.select("select * where {?s a <%s>} limit 10" % url)
+	check_response(response)
+	for result in body:
+		print "%s" % (str(result['s']))
 
 
 def snapshot(store):
