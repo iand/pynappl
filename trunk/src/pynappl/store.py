@@ -192,6 +192,10 @@ class Store:
 				return (response, status)
 			return (response, "")
 
+		def search(self, query, raw=False):
+			req_uri = self.build_uri("/items?query=" + urllib.quote_plus(query))
+			return self.client.request(req_uri, "GET", headers={"accept" : "application/rss+xml"})
+
 		def sparql(self, query):
 			req_uri = self.build_uri("/services/sparql?query=" + urllib.quote_plus(query))
 			return self.client.request(req_uri, "GET", headers={"accept" : "application/rdf+xml,application/sparql-results+xml"})

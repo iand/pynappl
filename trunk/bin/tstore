@@ -6,7 +6,7 @@ import re
 
 def main():
 	try:
-		opts, args = getopt.gnu_getopt(sys.argv[1:], "hs:r:u:p:f:", ["help", "store=", "url=", "username=", "password=", "file="])
+		opts, args = getopt.gnu_getopt(sys.argv[1:], "hs:r:u:p:f:q:", ["help", "store=", "url=", "username=", "password=", "file=", "query="])
 	except getopt.GetoptError, err:
 		# print help information and exit:
 		print str(err) # will print something like "option -a not recognized"
@@ -26,6 +26,7 @@ def main():
 	username = None
 	password = None
 	filename = None
+	query = None
 	
 	for o, v in opts:
 		if o in ("-s", "--store"):
@@ -42,6 +43,8 @@ def main():
 			password = v
 		elif o in ("-f", "--file"):
 			filename = v
+		elif o in ("-q", "--query"):
+			query = v
 		elif o in ("-h", "--help"):
 			usage()
 			sys.exit()
@@ -76,6 +79,14 @@ def main():
 		sampletype(store, url)
 	elif args[0] == "snapshot":
 		snapshot(store)
+	elif args[0] == "sparql":
+		if file is None or query is None:
+			error("query or file containing query not specified")
+		sparql(store, file, query)
+	elif args[0] == "search":
+		if query is None:
+			error("query not specified")
+		search(store, query)
 	elif args[0] == "reindex":
 		reindex(store)
 	elif args[0] == "reset":
@@ -98,7 +109,7 @@ def usage():
 	print """tstore: %s action [option]
 A simple command-line interface for working with a Talis Platform store
 Actions:
- backup          take a snapshot of a store, wait for it to complete
+ backup          [NotImpl] take a snapshot of a store, wait for it to complete
                  and then download it to the local system
  describe        fetch the description of a resource
  jobstatus       show the progress status of a scheduled job
@@ -107,10 +118,11 @@ Actions:
  restore         schedule a snapshot to be uploaded into a store
  sample          show a sample of data from the store's metabox
  sampletype      show a sample of data pf the specified type
+ search          run a free text query against the store
  sparql          run a SPARQL query against the store
  status          show read-write status of the store
- store           upload some RDF data to a store's metabox
- upload          upload some files to a store's contentbox
+ store           [NotImpl] upload some RDF data to a store's metabox
+ upload          [NotImpl] upload some files to a store's contentbox
 
 Options:
  -h/--help       show this message
@@ -121,6 +133,7 @@ Options:
                  uploading
  -f/--file       specify a file name, e.g. data to upload, or a sparql
                  query
+ -q/--query      specify a query, e.g. a sparql query
  --dir           specify a directory, e.g. containing data to upload
                  or location to place data.
  --traverse      recursively store files or RDF
@@ -169,16 +182,16 @@ def relative_time(t,accuracy=2,cmp_time=None,alternative_past=None):
 
 
 
-def check_response(response):
-	if response.status < 300:
-		return
+def check_response((response, body)):
+	if response.status in range(200, 300):
+		return (response, body)
 	elif response.status == 401:
 		print "Username and/or password were not valid for this store"
-		sys.exit(2)
 	else:
 		print "There was an error processing the request: %s" % (response.status)
 		if len(body) > 0:
 			print body
+	sys.exit(2)
 
 
 def status(store):
@@ -188,55 +201,57 @@ def describe(store, url):
 	(response, body) = store.describe(url, True)
 	print body
 
+def sparql(store, file, query):
+	if query is not None:
+		(response, body) = check_response(store.sparql(query))
+		print body
+
+def search(store, query):
+	if query is not None:
+		(response, body) = check_response(store.search(query))
+		print body
+		
 def sample(store):
-	(response, body) = store.select("select * where {?s a ?o} limit 10")
-	check_response(response)
+	(response, body) = check_response(store.select("select * where {?s a ?o} limit 10"))
 	for result in body:
 		print "%s (a %s)" % (str(result['s']), str(result['o']))
 
 def sampletype(store, url):
-	(response, body) = store.select("select * where {?s a <%s>} limit 10" % url)
-	check_response(response)
+	(response, body) = check_response(store.select("select * where {?s a <%s>} limit 10" % url))
 	for result in body:
 		print "%s" % (str(result['s']))
 
 
 def snapshot(store):
-	(response, body) = store.schedule_snapshot()
-	check_response(response)
+	(response, body) = check_response(store.schedule_snapshot())
 	if response.has_key('location'):
 		print "Snapshot job scheduled, URI is: %s" % response['location']
 	else:
 		print "Snapshot job was probably scheduled but no URI was returned for it"
 
 def reindex(store):
-	(response, body) = store.schedule_reindex()
-	check_response(response)
+	(response, body) = check_response(store.schedule_reindex())
 	if response.has_key('location'):
 		print "Reindex job scheduled, URI is: %s" % response['location']
 	else:
 		print "Reindex job was probably scheduled but no URI was returned for it"
 
 def reset(store):
-	(response, body) = store.schedule_reset()
-	check_response(response)
+	(response, body) = check_response(store.schedule_reset())
 	if response.has_key('location'):
 		print "Reset data job scheduled, URI is: %s" % response['location']
 	else:
 		print "Reset data was probably scheduled but no URI was returned for it"
 
 def restore(store, url):
-	(response, body) = store.schedule_restore(url)
-	check_response(response)
+	(response, body) = check_response(store.schedule_restore(url))
 	if response.has_key('location'):
 		print "Restore job scheduled, URI is: %s" % response['location']
 	else:
 		print "Restore job was probably scheduled but no URI was returned for it"
 		
 def jobstatus(store, url):
-	(response, body) = store.read_job(url)
-	check_response(response)
-	
+	(response, body) = check_response(store.read_job(url))
 	job = pynappl.Job.parse(url, body)
 	
 	type = "Unknown job"
