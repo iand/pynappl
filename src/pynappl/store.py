@@ -88,9 +88,19 @@ class Store:
 			req_uri = self.build_uri("/jobs")
 			return self.client.request(req_uri, "GET", headers={"accept" : "application/rdf+xml"})
 
-		def describe(self, uri):
+		def response_body_as_graph(self, response, body, format="xml"):
+			g = rdflib.ConjunctiveGraph()
+			if response.status < 300:
+				g.parse(StringIO(body), format=format)
+			return (response, g)
+
+		def describe(self, uri, raw = False):
 			req_uri = self.build_uri('meta?about=' + urllib.quote_plus(uri))
-			return self.client.request(req_uri, "GET", headers={"accept" : "application/rdf+xml"})
+			(response, body) = self.client.request(req_uri, "GET", headers={"accept" : "application/rdf+xml"})
+			if raw:
+				return (response, body)
+			else:
+				return self.response_body_as_graph(response, body)
 
 		def schedule_job(self, type, time, label, snapshot_uri = None):
 			if time is None:
@@ -128,8 +138,12 @@ class Store:
 			"""Schedule an offline job to restore a snapshot to a store"""
 			return self.schedule_job(pynappl.JOB_TYPE_RESTORE, time, label, snapshot_uri)
 			
-		def read_job(self, uri):
-			return self.client.request(uri, "GET", headers={"accept" : "application/rdf+xml"})
+		def read_job(self, uri, raw=False):
+			(response, body) = self.client.request(uri, "GET", headers={"accept" : "application/rdf+xml"})
+			if raw:
+				return (response, body)
+			else:
+				return (response, pynappl.Job.parse(body))
 			
 		def is_writeable(self):
 			req_uri = self.build_uri("/config/access-status")
@@ -153,9 +167,11 @@ class Store:
 
 			return False
 
-		def status(self):
+		def status(self, raw = False):
 			req_uri = self.build_uri("/config/access-status")
 			(response, body) = self.client.request(req_uri, "GET", headers={"accept" : "application/rdf+xml"}, )
+			if raw:
+				return (response, body)
 			if response.status < 300:
 				g = rdflib.ConjunctiveGraph();
 				g.parse(StringIO(body), format="xml")
@@ -173,5 +189,5 @@ class Store:
 				access_status_messages = list(g.objects(subject = rdflib.URIRef(req_uri), predicate = rdflib.URIRef('http://schemas.talis.com/2006/bigfoot/configuration#statusMessage')))
 				if len(access_status_messages) > 0 and len(str(access_status_messages[0])) > 0:
 						status += " (" + str(access_status_messages[0]) + ")"
-				return status
-			return None
+				return (response, status)
+			return (response, "")
