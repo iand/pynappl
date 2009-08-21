@@ -213,11 +213,11 @@ class Store:
 								if bnode is None:
 									raise PynapplError("SPARQL select result binding value is not a URI, Literal or BNode")
 								else:
-									value = rdflib.BNode(bnode)
+									value = rdflib.BNode(bnode.text)
 							else:
-								value = rdflib.Literal(literal)
+								value = rdflib.Literal(literal.text)
 						else:
-							value = rdflib.URIRef(uri)
+							value = rdflib.URIRef(uri.text)
 						d[name] = value
 					results.append(d)
 				return response, results
