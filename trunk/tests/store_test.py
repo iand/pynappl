@@ -682,6 +682,17 @@ class SparqlTestCase(unittest.TestCase):
     (resp, body) = store.select('select * where {?s a ?o} limit 10', raw = True)
     self.assertEqual(SELECT_DATA, body)
 
+  def test_store_data_with_graph_sets_accept(self):
+    client = MockHttp()
+    uri = 'http://example.com/store/services/sparql?query=' + urllib.quote_plus('select * where {?s a ?o} limit 10')
+    client.register('get', uri, SELECT_DATA, httplib2.Response({'content-type':'application/sparql-results+xml'}))
+    store = pynappl.Store('http://example.com/store', client=client)
+    (resp, body) = store.select('select * where {?s a ?o} limit 10', raw = True)
+
+    (headers, body) = client.get_request('get', uri)
+    self.assertTrue(headers.has_key('accept'))
+    self.assertEqual('application/sparql-results+xml', headers['accept'])
+
 
 
 
