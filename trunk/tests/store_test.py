@@ -72,6 +72,33 @@ STORE_ACCESS_STATUS_UN = """<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf
   </rdf:Description>
 </rdf:RDF>"""
 
+SELECT_DATA = """<?xml version="1.0"?>
+<sparql xmlns="http://www.w3.org/2005/sparql-results#">
+  <head>
+    <variable name="s"/>
+    <variable name="o"/>
+  </head>
+  <results>
+    <result>
+      <binding name="s">
+        <uri>http://oecd.dataincubator.org/</uri>
+      </binding>
+      <binding name="o">
+        <uri>http://rdfs.org/ns/void#Dataset</uri>
+      </binding>
+    </result>
+    <result>
+      <binding name="s">
+        <uri>http://oecd.dataincubator.org/glossary/segments/economic-outlook</uri>
+      </binding>
+      <binding name="o">
+        <uri>http://www.w3.org/2004/02/skos/core#Collection</uri>
+      </binding>
+    </result>
+  </results>
+</sparql>"""
+
+
 
 class BuildUriTestCase(unittest.TestCase):
 
@@ -645,8 +672,18 @@ class SparqlTestCase(unittest.TestCase):
   def test_select_performs_get_on_sparql_service(self):
     client = MockHttp()
     store = pynappl.Store('http://example.com/store', client=client)
-    resp = store.describe('http://example.com/foo')
-    self.assertTrue(client.received_request('get', 'http://example.com/store/meta?about=' + urllib.quote_plus('http://example.com/foo')))
+    (resp, body) = store.select('select * where {?s a ?o} limit 10', raw = True)
+    self.assertTrue(client.received_request('get', 'http://example.com/store/services/sparql?query=' + urllib.quote_plus('select * where {?s a ?o} limit 10')))
+
+  def test_select_returns_raw_result(self):
+    client = MockHttp()
+    client.register('get', 'http://example.com/store/services/sparql?query=' + urllib.quote_plus('select * where {?s a ?o} limit 10'), SELECT_DATA, httplib2.Response({'content-type':'application/sparql-results+xml'}))
+    store = pynappl.Store('http://example.com/store', client=client)
+    (resp, body) = store.select('select * where {?s a ?o} limit 10', raw = True)
+    self.assertEqual(SELECT_DATA, body)
+
+
+
 
 
 if __name__ == "__main__":

@@ -38,6 +38,7 @@ def suite():
                             , unittest.TestLoader().loadTestsFromTestCase(store_test.AuthenticationTestCase)
                             , unittest.TestLoader().loadTestsFromTestCase(store_test.UriTestCase)
                             , unittest.TestLoader().loadTestsFromTestCase(store_test.AccessStatusTestCase)
+                            , unittest.TestLoader().loadTestsFromTestCase(store_test.SparqlTestCase)
 
                             , unittest.TestLoader().loadTestsFromTestCase(job_test.ParseTestCase)
 
