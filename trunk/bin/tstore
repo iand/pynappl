@@ -349,8 +349,10 @@ def	store_url(store, filename):
 		
 
 def getfpmap(store):
-	(response, body) = check_response(store.read_fpmap(raw=True))
-	print body
+	(response, fpmap) = check_response(store.read_fpmap())
+	for predicate, info in fpmap.mappings().items():
+		print "%s -> %s" % (predicate, info['name'])
+
 
 def getqprofile(store):
 	(response, body) = check_response(store.read_query_profile(raw=True))

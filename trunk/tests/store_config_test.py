@@ -17,15 +17,103 @@
 import unittest
 import pynappl
 import time
+import rdflib
+
+FRAME = rdflib.Namespace("http://schemas.talis.com/2006/frame/schema#")
+BF = rdflib.Namespace("http://schemas.talis.com/2006/bigfoot/configuration#")
+
+FPMAP_DATA= """<rdf:RDF
+    xmlns:frm="http://schemas.talis.com/2006/frame/schema#"
+    xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+    xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#"
+    xmlns:j.0="http://schemas.talis.com/2006/bigfoot/configuration#" >
+  <rdf:Description rdf:about="http://example.com/store/fpmaps/1#aimchatid">
+    <frm:property rdf:resource="http://xmlns.com/foaf/0.1/aimChatID"/>
+    <frm:name>aimchatid2</frm:name>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://example.com/store/fpmaps/1#surname">
+    <frm:name>surname</frm:name>
+    <frm:property rdf:resource="http://xmlns.com/foaf/0.1/surname"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://example.com/store/fpmaps/1#name">
+    <frm:name>name</frm:name>
+    <frm:property rdf:resource="http://xmlns.com/foaf/0.1/name"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://example.com/store/fpmaps/1#family_name">
+    <frm:property rdf:resource="http://xmlns.com/foaf/0.1/family_name"/>
+    <frm:name>family_name</frm:name>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://example.com/store/fpmaps/1#jabberid">
+    <frm:name>jabberid</frm:name>
+    <frm:property rdf:resource="http://xmlns.com/foaf/0.1/jabberID"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://example.com/store/fpmaps/1#yahoochatid">
+    <frm:property rdf:resource="http://xmlns.com/foaf/0.1/yahooChatID"/>
+    <frm:name>yahoochatid</frm:name>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://example.com/store/fpmaps/1#plan">
+    <frm:property rdf:resource="http://xmlns.com/foaf/0.1/plan"/>
+    <frm:name>plan</frm:name>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://example.com/store/fpmaps/1#firstname">
+    <frm:property rdf:resource="http://xmlns.com/foaf/0.1/firstName"/>
+    <frm:name>firstname</frm:name>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://example.com/store/fpmaps/1#nick">
+    <frm:property rdf:resource="http://xmlns.com/foaf/0.1/nick"/>
+    <frm:name>nick</frm:name>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://example.com/store/fpmaps/1#msnchatid">
+    <frm:name>msnchatid</frm:name>
+    <frm:property rdf:resource="http://xmlns.com/foaf/0.1/msnChatID"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://example.com/store/fpmaps/1#gender">
+    <frm:name>gender</frm:name>
+    <frm:property rdf:resource="http://xmlns.com/foaf/0.1/gender"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://example.com/store/fpmaps/1#givenname">
+    <frm:property rdf:resource="http://xmlns.com/foaf/0.1/givenname"/>
+    <frm:name>givenname</frm:name>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://example.com/store/fpmaps/1#olb">
+    <frm:name>olb</frm:name>
+    <frm:property rdf:resource="http://purl.org/vocab/bio/0.1/olb"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://example.com/store/fpmaps/1#mboxsha1sum">
+    <frm:name>mboxsha1sum</frm:name>
+    <frm:property rdf:resource="http://xmlns.com/foaf/0.1/mbox_sha1sum"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://example.com/store/fpmaps/1">
+    <rdf:type rdf:resource="http://schemas.talis.com/2006/bigfoot/configuration#FieldPredicateMap"/>
+    <rdfs:label>default field/predicate map</rdfs:label>
+    <frm:mappedDatatypeProperty rdf:resource="http://example.com/store/fpmaps/1#yahoochatid"/>
+    <frm:mappedDatatypeProperty rdf:resource="http://example.com/store/fpmaps/1#mboxsha1sum"/>
+    <frm:mappedDatatypeProperty rdf:resource="http://example.com/store/fpmaps/1#givenname"/>
+    <frm:mappedDatatypeProperty rdf:resource="http://example.com/store/fpmaps/1#aimchatid"/>
+    <frm:mappedDatatypeProperty rdf:resource="http://example.com/store/fpmaps/1#olb"/>
+    <frm:mappedDatatypeProperty rdf:resource="http://example.com/store/fpmaps/1#gender"/>
+    <frm:mappedDatatypeProperty rdf:resource="http://example.com/store/fpmaps/1#msnchatid"/>
+    <frm:mappedDatatypeProperty rdf:resource="http://example.com/store/fpmaps/1#family_name"/>
+    <frm:mappedDatatypeProperty rdf:resource="http://example.com/store/fpmaps/1#surname"/>
+    <frm:mappedDatatypeProperty rdf:resource="http://example.com/store/fpmaps/1#nick"/>
+    <frm:mappedDatatypeProperty rdf:resource="http://example.com/store/fpmaps/1#name"/>
+    <frm:mappedDatatypeProperty rdf:resource="http://example.com/store/fpmaps/1#plan"/>
+    <frm:mappedDatatypeProperty rdf:resource="http://example.com/store/fpmaps/1#firstname"/>
+    <frm:mappedDatatypeProperty rdf:resource="http://example.com/store/fpmaps/1#jabberid"/>
+  </rdf:Description>
+</rdf:RDF>"""
+
+
+
 
 class StoreConfigTestCase(unittest.TestCase):
 	def test_get_first_fpmap_uri_default(self):
-		config = pynappl.StoreConfig("http://example.org/store/config")
-		self.assertEqual("http://example.org/store/config/fpmaps/1", config.get_first_fpmap_uri())
+		config = pynappl.StoreConfig("http://example.com/store/config")
+		self.assertEqual("http://example.com/store/config/fpmaps/1", config.get_first_fpmap_uri())
 
 	def test_get_first_query_profile_uri_default(self):
-		config = pynappl.StoreConfig("http://example.org/store/config")
-		self.assertEqual("http://example.org/store/config/queryprofiles/1", config.get_first_query_profile_uri())
+		config = pynappl.StoreConfig("http://example.com/store/config")
+		self.assertEqual("http://example.com/store/config/queryprofiles/1", config.get_first_query_profile_uri())
   
 	def test_get_first_fpmap_uri_handles_legacy_uris(self):
 		fpmap_uris = {
@@ -230,6 +318,132 @@ class StoreConfigTestCase(unittest.TestCase):
 		for store_name, qp_uri in qp_uris.items():
 			config = pynappl.StoreConfig("http://api.talis.com/stores/%s/config" % store_name)
 			self.assertEqual(qp_uri, config.get_first_query_profile_uri())
+
+
+class FPMapTestCase(unittest.TestCase):
+	def test_uri(self):
+		fpmap = pynappl.FieldPredicateMap("http://example.com/store/config/fpmaps/1")
+		self.assertEqual("http://example.com/store/config/fpmaps/1", fpmap.uri)
+
+	def test_add_mapping_adds_one_mapped_datatype_property(self):
+		fpmap = pynappl.FieldPredicateMap("http://example.com/store/fpmaps/1")
+		fpmap.add_mapping("http://example.com/pred", "pred")
+		g = fpmap.graph()
+		mappings = list(g.objects(subject = None, predicate = FRAME["mappedDatatypeProperty"]))
+		self.assertEqual(1, len(mappings))
+
+	def test_add_mapping_adds_mapped_datatype_property_with_fpmap_as_subject(self):
+		fpmap = pynappl.FieldPredicateMap("http://example.com/store/fpmaps/1")
+		fpmap.add_mapping("http://example.com/pred", "pred")
+		g = fpmap.graph()
+		mappings = list(g.objects(subject = rdflib.URIRef(fpmap.uri), predicate = FRAME["mappedDatatypeProperty"]))
+		self.assertEqual(1, len(mappings))
+
+	def test_add_mapping_adds_mapped_datatype_property_with_hash_uri(self):
+		fpmap = pynappl.FieldPredicateMap("http://example.com/store/fpmaps/1")
+		fpmap.add_mapping("http://example.com/pred", "pred")
+		g = fpmap.graph()
+		mappings = list(g.objects(subject = rdflib.URIRef(fpmap.uri), predicate = FRAME["mappedDatatypeProperty"]))
+		self.assertEqual('http://example.com/store/fpmaps/1#pred', str(mappings[0]))
+
+	def test_add_mapping_adds_mapped_datatype_property_with_one_name(self):
+		fpmap = pynappl.FieldPredicateMap("http://example.com/store/fpmaps/1")
+		fpmap.add_mapping("http://example.com/pred", "pred")
+		g = fpmap.graph()
+		mappings = list(g.objects(subject = rdflib.URIRef(fpmap.uri), predicate = FRAME["mappedDatatypeProperty"]))
+		names = list(g.objects(subject = mappings[0], predicate = FRAME["name"]))
+		self.assertEqual(1, len(names))
+		
+	def test_add_mapping_adds_mapped_datatype_property_with_name_of_correct_value(self):
+		fpmap = pynappl.FieldPredicateMap("http://example.com/store/fpmaps/1")
+		fpmap.add_mapping("http://example.com/pred", "pred")
+		g = fpmap.graph()
+		mappings = list(g.objects(subject = rdflib.URIRef(fpmap.uri), predicate = FRAME["mappedDatatypeProperty"]))
+		names = list(g.objects(subject = mappings[0], predicate = FRAME["name"]))
+		self.assertEqual("pred", str(names[0]))
+
+	def test_add_mapping_adds_mapped_datatype_property_with_one_property(self):
+		fpmap = pynappl.FieldPredicateMap("http://example.com/store/fpmaps/1")
+		fpmap.add_mapping("http://example.com/pred", "pred")
+		g = fpmap.graph()
+		mappings = list(g.objects(subject = rdflib.URIRef(fpmap.uri), predicate = FRAME["mappedDatatypeProperty"]))
+		properties = list(g.objects(subject = mappings[0], predicate = FRAME["property"]))
+		self.assertEqual(1, len(properties))
+		
+	def test_add_mapping_adds_mapped_datatype_property_with_property_of_correct_value(self):
+		fpmap = pynappl.FieldPredicateMap("http://example.com/store/fpmaps/1")
+		fpmap.add_mapping("http://example.com/pred", "pred")
+		g = fpmap.graph()
+		mappings = list(g.objects(subject = rdflib.URIRef(fpmap.uri), predicate = FRAME["mappedDatatypeProperty"]))
+		properties = list(g.objects(subject = mappings[0], predicate = FRAME["property"]))
+		self.assertEqual("http://example.com/pred", str(properties[0]))
+
+	def test_add_mapping_returns_uri_of_mapping(self):
+		fpmap = pynappl.FieldPredicateMap("http://example.com/store/fpmaps/1")
+		mapping_uri = fpmap.add_mapping("http://example.com/pred", "pred")
+		g = fpmap.graph()
+		mappings = list(g.objects(subject = rdflib.URIRef(fpmap.uri), predicate = FRAME["mappedDatatypeProperty"]))
+		self.assertEqual(mapping_uri, str(mappings[0]))
+		
+	def test_add_mapping_adds_mapped_datatype_property_with_one_analyzer(self):
+		fpmap = pynappl.FieldPredicateMap("http://example.com/store/fpmaps/1")
+		fpmap.add_mapping("http://example.com/pred", "pred", analyzer="http://example.com/analyzer")
+		g = fpmap.graph()
+		mappings = list(g.objects(subject = rdflib.URIRef(fpmap.uri), predicate = FRAME["mappedDatatypeProperty"]))
+		names = list(g.objects(subject = mappings[0], predicate = BF["analyzer"]))
+		self.assertEqual(1, len(names))
+		
+	def test_add_mapping_adds_mapped_datatype_property_with_analyzer_of_correct_value(self):
+		fpmap = pynappl.FieldPredicateMap("http://example.com/store/fpmaps/1")
+		fpmap.add_mapping("http://example.com/pred", "pred", analyzer="http://example.com/analyzer")
+		g = fpmap.graph()
+		mappings = list(g.objects(subject = rdflib.URIRef(fpmap.uri), predicate = FRAME["mappedDatatypeProperty"]))
+		analyzers = list(g.objects(subject = mappings[0], predicate = BF["analyzer"]))
+		self.assertEqual("http://example.com/analyzer", str(analyzers[0]))
+
+	def test_remove_mapping_removed_mapped_datatype_property(self):
+		fpmap = pynappl.FieldPredicateMap("http://example.com/store/fpmaps/1")
+		mapping_uri = fpmap.add_mapping("http://example.com/pred", "pred")
+		mapping_uri2 = fpmap.add_mapping("http://example.com/pred2", "pred2")
+
+		fpmap.remove_mapping("http://example.com/pred", "pred")
+
+		g = fpmap.graph()
+		mapping_object_triples = list(g.triples((None, None, rdflib.URIRef(mapping_uri))))
+		self.assertEqual(0, len(mapping_object_triples))
+
+		mapping_subject_triples = list(g.objects((rdflib.URIRef(mapping_uri), None, None)))
+		self.assertEqual(0, len(mapping_subject_triples))
+
+	def test_mappings_returns_dictionary(self):
+		fpmap = pynappl.FieldPredicateMap("http://example.com/store/fpmaps/1")
+		mapping_uri = fpmap.add_mapping("http://example.com/pred", "pred")
+		mapping_uri2 = fpmap.add_mapping("http://example.com/pred2", "pred2")
+
+		mappings = fpmap.mappings()
+		self.assertEqual("pred", mappings["http://example.com/pred"]['name'])
+		self.assertEqual("pred2", mappings["http://example.com/pred2"]['name'])
+
+
+	def test_from_rdfxml(self):
+		fpmap = pynappl.FieldPredicateMap("http://example.com/store/fpmaps/1")
+		fpmap.from_rdfxml(FPMAP_DATA)
+		mappings = fpmap.mappings()
+		self.assertEqual("surname", mappings['http://xmlns.com/foaf/0.1/surname']['name'] )
+		self.assertEqual("aimchatid2", mappings['http://xmlns.com/foaf/0.1/aimChatID']['name'] )
+		self.assertEqual("name", mappings['http://xmlns.com/foaf/0.1/name']['name'] )
+		self.assertEqual("family_name", mappings['http://xmlns.com/foaf/0.1/family_name']['name'] )
+		self.assertEqual("jabberid", mappings['http://xmlns.com/foaf/0.1/jabberID']['name'] )
+		self.assertEqual("yahoochatid", mappings['http://xmlns.com/foaf/0.1/yahooChatID']['name'] )
+		self.assertEqual("plan", mappings['http://xmlns.com/foaf/0.1/plan']['name'] )
+		self.assertEqual("firstname", mappings['http://xmlns.com/foaf/0.1/firstName']['name'] )
+		self.assertEqual("nick", mappings['http://xmlns.com/foaf/0.1/nick']['name'] )
+		self.assertEqual("msnchatid", mappings['http://xmlns.com/foaf/0.1/msnChatID']['name'] )
+		self.assertEqual("gender", mappings['http://xmlns.com/foaf/0.1/gender']['name'] )
+		self.assertEqual("givenname", mappings['http://xmlns.com/foaf/0.1/givenname']['name'] )
+		self.assertEqual("mboxsha1sum", mappings['http://xmlns.com/foaf/0.1/mbox_sha1sum']['name'] )
+		self.assertEqual("olb", mappings['http://purl.org/vocab/bio/0.1/olb']['name'] )
+
 
   
 if __name__ == "__main__":

@@ -254,9 +254,14 @@ class Store:
 		def read_fpmap(self, raw=False):
 			"""Retrieve the field/predicate map (the first one if there are multiple)"""
 			config = self.get_config()
-			(response, body) = self.client.request(config.get_first_fpmap_uri(), "GET", headers={"accept" : "application/rdf+xml"})
+			fpmap_uri = config.get_first_fpmap_uri()
+			(response, body) = self.client.request(fpmap_uri, "GET", headers={"accept" : "application/rdf+xml"})
 			if raw:
 				return (response, body)
+			else:
+				fpmap = pynappl.FieldPredicateMap(fpmap_uri)
+				fpmap.from_rdfxml(body)
+				return (response, fpmap)
 
 				
 		def read_query_profile(self, raw=False):

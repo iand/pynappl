@@ -14,8 +14,14 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA	02110-1301 USA
 
-__all__ = ["StoreConfig"]
+__all__ = ["StoreConfig", "FieldPredicateMap"]
 import re
+import rdflib
+
+FRAME = rdflib.Namespace("http://schemas.talis.com/2006/frame/schema#")
+BF = rdflib.Namespace("http://schemas.talis.com/2006/bigfoot/configuration#")
+
+
 
 class StoreConfig:
 		def __init__(self, uri):
@@ -93,3 +99,51 @@ class StoreConfig:
 					return 'http://api.talis.com/stores/%s/indexes/cnimages/queryprofiles/default' % store_name
 			return '%s/queryprofiles/1' % self.uri
 			
+
+class FieldPredicateMap():
+	def __init__(self, uri):
+		self.uri = uri
+		self.init_graph()
+		
+	def init_graph(self):
+		self.g = rdflib.ConjunctiveGraph()
+		self.g.bind('frm', FRAME)
+		self.g.bind('bf', BF)
+		
+	def add_mapping(self, property, name, analyzer = None):
+		mapping_uri = "%s#%s" % (self.uri, name)
+		self.g.add( (rdflib.URIRef(self.uri), FRAME["mappedDatatypeProperty"], rdflib.URIRef(mapping_uri) ) )
+		self.g.add( (rdflib.URIRef(mapping_uri), FRAME["property"], rdflib.URIRef(property) ) )
+		self.g.add( (rdflib.URIRef(mapping_uri), FRAME["name"], rdflib.Literal(name) ) )
+		if analyzer is not None:
+			self.g.add( (rdflib.URIRef(mapping_uri), BF["analyzer"], rdflib.URIRef(analyzer) ) )
+		
+		return mapping_uri
+		
+		
+	def remove_mapping(self, property, name):
+		for (s, p, o) in self.g.triples( (None, FRAME["property"], rdflib.URIRef(property)) ):
+			names = list(self.g.triples( (s, FRAME["name"], rdflib.Literal(name) ) ) )
+			if len(names) > 0:
+				mapping_res = s
+				self.g.remove( (None, None, mapping_res) )
+				self.g.remove( (mapping_res, None, None) )
+				return
+	
+	def mappings(self):
+		mapping_list = {}
+		for (s, p, o) in self.g.triples( (rdflib.URIRef(self.uri), FRAME["mappedDatatypeProperty"], None) ):
+			names = list(self.g.objects( subject = o, predicate = FRAME["name"] ) ) 
+			properties = list(self.g.objects( subject = o, predicate = FRAME["property"] ) ) 
+			
+			if len(names) == 1 and len(properties) == 1:
+				mapping_list[str(properties[0])] = { 'name' : str(names[0]) }
+		return mapping_list
+	
+
+	def graph(self):
+		return self.g
+		
+	def from_rdfxml(self, data):
+		self.init_graph()
+		self.g.parse(rdflib.StringInputSource(data), format="xml")
