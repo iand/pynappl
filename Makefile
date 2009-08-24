@@ -18,5 +18,5 @@ test:
 clean:
 	$(PYTHON) clean.py
 
-dist:
-	$(PYTHON) setup.py
+dist: clean compile
+	$(PYTHON) setup.py sdist
