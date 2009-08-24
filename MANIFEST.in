@@ -1,3 +1,4 @@
 include COPYING *.rdf Makefile clean.py
+recursive-include tests *.py
 recursive-include samples *.txt *.py
-recursive-include bin *.txt *.py
+recursive-include bin *
