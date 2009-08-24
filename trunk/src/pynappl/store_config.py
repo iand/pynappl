@@ -14,7 +14,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA	02110-1301 USA
 
-__all__ = ["StoreConfig", "FieldPredicateMap"]
+__all__ = ["StoreConfig", "FieldPredicateMap", "QueryProfile"]
 import re
 import rdflib
 
@@ -111,6 +111,7 @@ class FieldPredicateMap():
 		self.g.bind('bf', BF)
 		
 	def add_mapping(self, property, name, analyzer = None):
+		self.remove_mapping(property)
 		mapping_uri = "%s#%s" % (self.uri, name)
 		self.g.add( (rdflib.URIRef(self.uri), FRAME["mappedDatatypeProperty"], rdflib.URIRef(mapping_uri) ) )
 		self.g.add( (rdflib.URIRef(mapping_uri), FRAME["property"], rdflib.URIRef(property) ) )
@@ -121,14 +122,11 @@ class FieldPredicateMap():
 		return mapping_uri
 		
 		
-	def remove_mapping(self, property, name):
+	def remove_mapping(self, property):
 		for (s, p, o) in self.g.triples( (None, FRAME["property"], rdflib.URIRef(property)) ):
-			names = list(self.g.triples( (s, FRAME["name"], rdflib.Literal(name) ) ) )
-			if len(names) > 0:
-				mapping_res = s
-				self.g.remove( (None, None, mapping_res) )
-				self.g.remove( (mapping_res, None, None) )
-				return
+			self.g.remove( (None, None, s) )
+			self.g.remove( (s, None, None) )
+			return
 	
 	def mappings(self):
 		mapping_list = {}
@@ -147,3 +145,45 @@ class FieldPredicateMap():
 	def from_rdfxml(self, data):
 		self.init_graph()
 		self.g.parse(rdflib.StringInputSource(data), format="xml")
+
+
+class QueryProfile():
+	def __init__(self, uri):
+		self.uri = uri
+		self.init_graph()
+		
+	def init_graph(self):
+		self.g = rdflib.ConjunctiveGraph()
+		self.g.bind('frm', FRAME)
+		self.g.bind('bf', BF)
+
+	def graph(self):
+		return self.g
+		
+	def from_rdfxml(self, data):
+		self.init_graph()
+		self.g.parse(rdflib.StringInputSource(data), format="xml")
+
+	def add_field_weight(self, name, weight):
+		self.remove_field_weight(name)
+		weight_uri = "%s#%s" % (self.uri, name)
+		self.g.add( (rdflib.URIRef(self.uri), BF["fieldWeight"], rdflib.URIRef(weight_uri) ) )
+		self.g.add( (rdflib.URIRef(weight_uri), BF["weight"], rdflib.Literal(weight) ) )
+		self.g.add( (rdflib.URIRef(weight_uri), FRAME["name"], rdflib.Literal(name) ) )
+		return weight_uri
+
+	def remove_field_weight(self, name):
+		for (s, p, o) in self.g.triples( (None, FRAME["name"], rdflib.Literal(name)) ):
+			self.g.remove( (None, None, s) )
+			self.g.remove( (s, None, None) )
+			return
+
+	def weights(self):
+		weight_list = {}
+		for (s, p, o) in self.g.triples( (rdflib.URIRef(self.uri), BF["fieldWeight"], None) ):
+			names = list(self.g.objects( subject = o, predicate = FRAME["name"] ) ) 
+			weights = list(self.g.objects( subject = o, predicate = BF["weight"] ) ) 
+			
+			if len(names) == 1 and len(weights) == 1:
+				weight_list[str(names[0])] = str(weights[0])
+		return weight_list

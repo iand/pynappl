@@ -103,7 +103,28 @@ FPMAP_DATA= """<rdf:RDF
   </rdf:Description>
 </rdf:RDF>"""
 
-
+QP_DATA="""<rdf:RDF
+    xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+    xmlns:j.0="http://schemas.talis.com/2006/frame/schema#"
+    xmlns:j.1="http://schemas.talis.com/2006/bigfoot/configuration#" > 
+  <rdf:Description rdf:about="http://example.com/store/config/queryprofiles/1#subject">
+    <j.1:weight>5</j.1:weight>
+    <j.0:name>subject</j.0:name>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://example.com/store/config/queryprofiles/1#subtitle">
+    <j.1:weight>3</j.1:weight>
+    <j.0:name>subtitle</j.0:name>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://example.com/store/config/queryprofiles/1#label">
+    <j.1:weight>1</j.1:weight>
+    <j.0:name>label</j.0:name>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://example.com/store/config/queryprofiles/1">
+    <j.1:fieldWeight rdf:resource="http://example.com/store/config/queryprofiles/1#subtitle"/>
+    <j.1:fieldWeight rdf:resource="http://example.com/store/config/queryprofiles/1#subject"/>
+    <j.1:fieldWeight rdf:resource="http://example.com/store/config/queryprofiles/1#label"/>
+  </rdf:Description>
+</rdf:RDF>"""
 
 
 class StoreConfigTestCase(unittest.TestCase):
@@ -401,12 +422,12 @@ class FPMapTestCase(unittest.TestCase):
 		analyzers = list(g.objects(subject = mappings[0], predicate = BF["analyzer"]))
 		self.assertEqual("http://example.com/analyzer", str(analyzers[0]))
 
-	def test_remove_mapping_removed_mapped_datatype_property(self):
+	def test_remove_mapping(self):
 		fpmap = pynappl.FieldPredicateMap("http://example.com/store/fpmaps/1")
 		mapping_uri = fpmap.add_mapping("http://example.com/pred", "pred")
 		mapping_uri2 = fpmap.add_mapping("http://example.com/pred2", "pred2")
 
-		fpmap.remove_mapping("http://example.com/pred", "pred")
+		fpmap.remove_mapping("http://example.com/pred")
 
 		g = fpmap.graph()
 		mapping_object_triples = list(g.triples((None, None, rdflib.URIRef(mapping_uri))))
@@ -443,6 +464,124 @@ class FPMapTestCase(unittest.TestCase):
 		self.assertEqual("givenname", mappings['http://xmlns.com/foaf/0.1/givenname']['name'] )
 		self.assertEqual("mboxsha1sum", mappings['http://xmlns.com/foaf/0.1/mbox_sha1sum']['name'] )
 		self.assertEqual("olb", mappings['http://purl.org/vocab/bio/0.1/olb']['name'] )
+
+	def test_add_mapping_multiple_times_loses_earlier_values(self):
+		fpmap = pynappl.FieldPredicateMap("http://example.com/store/fpmaps/1")
+		fpmap.add_mapping("http://example.com/pred", "pred")
+		fpmap.add_mapping("http://example.com/pred", "prednew")
+		g = fpmap.graph()
+		mappings = list(g.objects(subject = rdflib.URIRef(fpmap.uri), predicate = FRAME["mappedDatatypeProperty"]))
+		names = list(g.objects(subject = mappings[0], predicate = FRAME["name"]))
+		self.assertEqual(1, len(names))
+		self.assertEqual("prednew", str(names[0]))
+
+
+class QueryProfileTestCase(unittest.TestCase):
+	def test_uri(self):
+		qp = pynappl.QueryProfile("http://example.com/store/config/queryprofiles/1")
+		self.assertEqual("http://example.com/store/config/queryprofiles/1", qp.uri)
+
+	def test_add_field_weight_adds_one_fieldweight_property(self):
+		qp = pynappl.QueryProfile("http://example.com/store/config/queryprofiles/1")
+		qp.add_field_weight("pred", "2.0")
+		g = qp.graph()
+		weights = list(g.objects(subject = None, predicate = BF["fieldWeight"]))
+		self.assertEqual(1, len(weights))
+
+	def test_add_field_weight_adds_only_one_fieldweight_property_with_qp_as_subject(self):
+		qp = pynappl.QueryProfile("http://example.com/store/config/queryprofiles/1")
+		qp.add_field_weight("pred", "2.0")
+		g = qp.graph()
+		weights = list(g.objects(subject = rdflib.URIRef(qp.uri), predicate = BF["fieldWeight"]))
+		self.assertEqual(1, len(weights))
+
+	def test_add_field_weight_adds_only_one_fieldweight_property_with_hash_uri(self):
+		qp = pynappl.QueryProfile("http://example.com/store/config/queryprofiles/1")
+		qp.add_field_weight("pred", "2.0")
+		g = qp.graph()
+		weights = list(g.objects(subject = rdflib.URIRef(qp.uri), predicate = BF["fieldWeight"]))
+		self.assertEqual("http://example.com/store/config/queryprofiles/1#pred", str(weights[0]))
+
+	def test_add_field_weight_adds_one_name(self):
+		qp = pynappl.QueryProfile("http://example.com/store/config/queryprofiles/1")
+		qp.add_field_weight("pred", "2.0")
+		g = qp.graph()
+		weights = list(g.objects(subject = rdflib.URIRef(qp.uri), predicate = BF["fieldWeight"]))
+		names = list(g.objects(subject = weights[0], predicate = FRAME["name"]))
+		self.assertEqual(1, len(names))
+		
+	def test_add_mapping_adds_name_of_correct_value(self):
+		qp = pynappl.QueryProfile("http://example.com/store/config/queryprofiles/1")
+		qp.add_field_weight("pred", "2.0")
+		g = qp.graph()
+		weights = list(g.objects(subject = rdflib.URIRef(qp.uri), predicate = BF["fieldWeight"]))
+		names = list(g.objects(subject = weights[0], predicate = FRAME["name"]))
+		self.assertEqual("pred", str(names[0]))
+
+	def test_add_field_weight_adds_one_weight(self):
+		qp = pynappl.QueryProfile("http://example.com/store/config/queryprofiles/1")
+		qp.add_field_weight("pred", "2.0")
+		g = qp.graph()
+		weights = list(g.objects(subject = rdflib.URIRef(qp.uri), predicate = BF["fieldWeight"]))
+		weight_values = list(g.objects(subject = weights[0], predicate = BF["weight"]))
+		self.assertEqual(1, len(weight_values))
+		
+	def test_add_field_weight_adds_weight_of_correct_value(self):
+		qp = pynappl.QueryProfile("http://example.com/store/config/queryprofiles/1")
+		qp.add_field_weight("pred", "2.0")
+		g = qp.graph()
+		weights = list(g.objects(subject = rdflib.URIRef(qp.uri), predicate = BF["fieldWeight"]))
+		weight_values = list(g.objects(subject = weights[0], predicate = BF["weight"]))
+		self.assertEqual("2.0", str(weight_values[0]))
+
+	def test_add_field_weight_returns_uri_of_field_weight(self):
+		qp = pynappl.QueryProfile("http://example.com/store/config/queryprofiles/1")
+		field_weight_uri = qp.add_field_weight("pred", "2.0")
+		g = qp.graph()
+		weights = list(g.objects(subject = rdflib.URIRef(qp.uri), predicate = BF["fieldWeight"]))
+		self.assertEqual(field_weight_uri, str(weights[0]))
+
+
+	def test_remove_field_weight(self):
+		qp = pynappl.QueryProfile("http://example.com/store/config/queryprofiles/1")
+		field_weight_uri1 = qp.add_field_weight("pred", "2.0")
+		field_weight_uri2 = qp.add_field_weight("pred2", "4.5")
+
+		qp.remove_field_weight("pred")
+
+		g = qp.graph()
+		object_triples = list(g.triples((None, None, rdflib.URIRef(field_weight_uri1))))
+		self.assertEqual(0, len(object_triples))
+
+		subject_triples = list(g.objects((rdflib.URIRef(field_weight_uri1), None, None)))
+		self.assertEqual(0, len(subject_triples))
+
+	def test_weights_returns_dictionary(self):
+		qp = pynappl.QueryProfile("http://example.com/store/config/queryprofiles/1")
+		field_weight_uri1 = qp.add_field_weight("pred", "2.0")
+		field_weight_uri2 = qp.add_field_weight("pred2", "4.5")
+
+		weights = qp.weights()
+		self.assertEqual("2.0", weights["pred"])
+		self.assertEqual("4.5", weights["pred2"])
+
+	def test_add_field_weight_multiple_times_loses_earlier_values(self):
+		qp = pynappl.QueryProfile("http://example.com/store/config/queryprofiles/1")
+		qp.add_field_weight("pred", "2.0")
+		qp.add_field_weight("pred", "8.0")
+		g = qp.graph()
+		weights = list(g.objects(subject = rdflib.URIRef(qp.uri), predicate = BF["fieldWeight"]))
+		weight_values = list(g.objects(subject = weights[0], predicate = BF["weight"]))
+		self.assertEqual(1, len(weight_values))
+		self.assertEqual("8.0", str(weight_values[0]))
+
+	def test_from_rdfxml(self):
+		qp = pynappl.QueryProfile("http://example.com/store/config/queryprofiles/1")
+		qp.from_rdfxml(QP_DATA)
+		weights = qp.weights()
+		self.assertEqual("5", weights["subject"])
+		self.assertEqual("3", weights["subtitle"])
+		self.assertEqual("1", weights["label"])
 
 
   
