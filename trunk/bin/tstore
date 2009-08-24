@@ -6,7 +6,7 @@ import re
 
 def main():
 	try:
-		opts, args = getopt.gnu_getopt(sys.argv[1:], "hs:r:u:p:f:q:", ["help", "store=", "url=", "username=", "password=", "file=", "query="])
+		opts, args = getopt.gnu_getopt(sys.argv[1:], "hs:r:u:p:f:q:", ["help", "raw", "store=", "url=", "username=", "password=", "file=", "query="])
 	except getopt.GetoptError, err:
 		# print help information and exit:
 		print str(err) # will print something like "option -a not recognized"
@@ -27,6 +27,7 @@ def main():
 	password = None
 	filename = None
 	query = None
+	raw = False
 	
 	for o, v in opts:
 		if o in ("-s", "--store"):
@@ -45,6 +46,8 @@ def main():
 			filename = v
 		elif o in ("-q", "--query"):
 			query = v
+		elif o in ("--raw"):
+			raw = True
 		elif o in ("-h", "--help"):
 			usage()
 			sys.exit()
@@ -72,11 +75,11 @@ def main():
 			error("url not specified")
 		describe(store, url)
 	elif args[0] == "sample":
-		sample(store)
+		sample(store, raw)
 	elif args[0] == "sampletype":
 		if url is None:
 			error("url of type not specified")
-		sampletype(store, url)
+		sampletype(store, url, raw)
 	elif args[0] == "snapshot":
 		snapshot(store)
 	elif args[0] == "backup":
@@ -85,13 +88,13 @@ def main():
 		if filename is not None:
 			sparql_file(store, filename)
 		elif query is not None:
-			sparql_query(store, query)
+			sparql_query(store, query, raw)
 		else:
 			error("query or file containing query not specified")
 	elif args[0] == "search":
 		if query is None:
 			error("query not specified")
-		search(store, query)
+		search(store, query, raw)
 	elif args[0] == "reindex":
 		reindex(store)
 	elif args[0] == "reset":
@@ -103,7 +106,7 @@ def main():
 	elif args[0] == "jobstatus":
 		if url is None:
 			error("url not specified")
-		jobstatus(store, url)
+		jobstatus(store, url, raw)
 	elif args[0] == "store":
 		if filename is not None:
 			store_file(store, filename)
@@ -112,7 +115,7 @@ def main():
 		else:
 			error("file or url not specified")
 	elif args[0] == "getfpmap":
-		getfpmap(store)
+		getfpmap(store, raw)
 	elif args[0] == "getqprofile":
 		getqprofile(store)
 
@@ -152,6 +155,7 @@ Options:
  -f/--file       specify a file name, e.g. data to upload, or a sparql
                  query
  -q/--query      specify a query, e.g. a sparql query
+ --raw           Always show raw output, don't translate for humans
  --dir           [NotImpl] specify a directory, e.g. containing data to upload
                  or location to place data.
  --traverse      [NotImpl] recursively store files or RDF
@@ -219,30 +223,36 @@ def describe(store, url):
 	(response, body) = check_response(store.describe(url, True))
 	print body
 
-def sparql_query(store, query):
+def sparql_query(store, query, raw):
 	(response, body) = check_response(store.sparql(query))
 	print body
 
-def sparql_file(store, filename):
+def sparql_file(store, filename, raw):
 	file = open(filename, 'r')
 	query = file.read()
 	file.close()
 	return sparql_query(store, query)
 
-def search(store, query):
+def search(store, query, raw):
 	if query is not None:
 		(response, body) = check_response(store.search(query))
 		print body
 		
-def sample(store):
-	(response, body) = check_response(store.select("select * where {?s a ?o} limit 10"))
-	for result in body:
-		print "%s (a %s)" % (str(result['s']), str(result['o']))
+def sample(store, raw):
+	(response, body) = check_response(store.select("select * where {?s a ?o} limit 10", raw))
+	if raw:
+		print body
+	else:
+		for result in body:
+			print "%s (a %s)" % (str(result['s']), str(result['o']))
 
-def sampletype(store, url):
-	(response, body) = check_response(store.select("select * where {?s a <%s>} limit 10" % url))
-	for result in body:
-		print "%s" % (str(result['s']))
+def sampletype(store, url, raw):
+	(response, body) = check_response(store.select("select * where {?s a <%s>} limit 10" % url, raw))
+	if raw:
+		print body
+	else:
+		for result in body:
+			print "%s" % (str(result['s']))
 
 def backup(store):
 	(response, body) = check_response(store.schedule_snapshot())
@@ -302,34 +312,36 @@ def restore(store, url):
 	else:
 		print "Restore job was probably scheduled but no URI was returned for it"
 		
-def jobstatus(store, url):
-	(response, job) = check_response(store.read_job(url))
-	
-	type = "Unknown job"
-	if job.type == 'http://schemas.talis.com/2006/bigfoot/configuration#SnapshotJob':
-		type = "Snapshot job"
-	elif job.type == 'http://schemas.talis.com/2006/bigfoot/configuration#ResetDataJob':
-		type = "Reset data job"
-	elif job.type == 'http://schemas.talis.com/2006/bigfoot/configuration#RestoreJob':
-		type = "Restore job"
-	elif job.type == 'http://schemas.talis.com/2006/bigfoot/configuration#ReindexJob':
-		type = "Reindex job"
-		
-	print "%s submitted %s, scheduled to run %s "  % (type, relative_time(time.mktime(job.created)), relative_time(time.mktime(job.start_time)))
-	if not job.has_started():
-		print "This job has not started yet"
+def jobstatus(store, url, raw):
+	(response, job) = check_response(store.read_job(url, raw))
+	if raw:
+		print job
 	else:
-		if job.has_completed():
-			if job.was_successful():
-				print "Processing started %s and completed successfully %s with a status of %s" % (relative_time(time.mktime(job.actual_start_time)), relative_time(time.mktime(job.end_time)), job.completion_message)
-			else:
-				print "Processing started %s and FAILED %s with a status of %s" % (relative_time(time.mktime(job.actual_start_time)), relative_time(time.mktime(job.end_time)), job.completion_message)
-				for update in job.progress_updates:
-					print "%s: %s" % (relative_time(time.mktime(update.time)), update.message)
+		type = "Unknown job"
+		if job.type == 'http://schemas.talis.com/2006/bigfoot/configuration#SnapshotJob':
+			type = "Snapshot job"
+		elif job.type == 'http://schemas.talis.com/2006/bigfoot/configuration#ResetDataJob':
+			type = "Reset data job"
+		elif job.type == 'http://schemas.talis.com/2006/bigfoot/configuration#RestoreJob':
+			type = "Restore job"
+		elif job.type == 'http://schemas.talis.com/2006/bigfoot/configuration#ReindexJob':
+			type = "Reindex job"
+			
+		print "%s submitted %s, scheduled to run %s "  % (type, relative_time(time.mktime(job.created)), relative_time(time.mktime(job.start_time)))
+		if not job.has_started():
+			print "This job has not started yet"
 		else:
-			print "Processing started %s, progress so far:" % (relative_time(time.mktime(job.actual_start_time)))
-			for update in job.progress_updates:
-				print "* %s: %s" % (relative_time(time.mktime(update.time)), update.message)
+			if job.has_completed():
+				if job.was_successful():
+					print "Processing started %s and completed successfully %s with a status of %s" % (relative_time(time.mktime(job.actual_start_time)), relative_time(time.mktime(job.end_time)), job.completion_message)
+				else:
+					print "Processing started %s and FAILED %s with a status of %s" % (relative_time(time.mktime(job.actual_start_time)), relative_time(time.mktime(job.end_time)), job.completion_message)
+					for update in job.progress_updates:
+						print "%s: %s" % (relative_time(time.mktime(update.time)), update.message)
+			else:
+				print "Processing started %s, progress so far:" % (relative_time(time.mktime(job.actual_start_time)))
+				for update in job.progress_updates:
+					print "* %s: %s" % (relative_time(time.mktime(update.time)), update.message)
 
 
 def	store_file(store, filename):
@@ -348,10 +360,13 @@ def	store_url(store, filename):
 		print "File was successfully processed by store"
 		
 
-def getfpmap(store):
-	(response, fpmap) = check_response(store.read_fpmap())
-	for predicate, info in fpmap.mappings().items():
-		print "%s -> %s" % (predicate, info['name'])
+def getfpmap(store, raw):
+	(response, fpmap) = check_response(store.read_fpmap(raw))
+	if raw:
+		print fpmap
+	else:
+		for predicate, info in fpmap.mappings().items():
+			print "%s -> %s" % (predicate, info['name'])
 
 
 def getqprofile(store):
