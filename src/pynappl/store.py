@@ -143,7 +143,7 @@ class Store:
 			if raw:
 				return (response, body)
 			else:
-				return (response, pynappl.Job.parse(body))
+				return (response, pynappl.Job.parse(uri, body))
 			
 		def is_writeable(self):
 			req_uri = self.build_uri("/config/access-status")
