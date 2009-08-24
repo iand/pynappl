@@ -22,6 +22,7 @@ import rdflib
 import datetime as dt
 import pynappl
 import xml.etree.ElementTree as et
+import constants
 
 class Store:
 		def __init__(self,uri, username = None, password = None, client = None):
@@ -172,23 +173,23 @@ class Store:
 			(response, body) = self.client.request(req_uri, "GET", headers={"accept" : "application/rdf+xml"}, )
 			if raw:
 				return (response, body)
-			if response.status < 300:
+			if response.status in range(200, 300):
 				g = rdflib.ConjunctiveGraph();
 				g.parse(rdflib.StringInputSource(body), format="xml")
 				status = "store is "
 				access_status_values = list(g.objects(subject = rdflib.URIRef(req_uri), predicate = rdflib.URIRef('http://schemas.talis.com/2006/bigfoot/configuration#accessMode')))
 				if len(access_status_values) > 0:
-					if str(access_status_values[0]) == 'http://schemas.talis.com/2006/bigfoot/statuses#read-write':
+					if str(access_status_values[0]) == constants.STATUS_RW:
 						status += "read/write"
-					elif str(access_status_values[0]) == 'http://schemas.talis.com/2006/bigfoot/statuses#read-only':
+					elif str(access_status_values[0]) == constants.STATUS_R:
 						status += "read only"
-					elif str(access_status_values[0]) == 'http://schemas.talis.com/2006/bigfoot/statuses#unavailable':
+					elif str(access_status_values[0]) == constants.STATUS_U:
 						status += "unavailable"
 					else:
-						status = "in an unknown status"
+						status += "in an unknown status"
 				access_status_messages = list(g.objects(subject = rdflib.URIRef(req_uri), predicate = rdflib.URIRef('http://schemas.talis.com/2006/bigfoot/configuration#statusMessage')))
 				if len(access_status_messages) > 0 and len(str(access_status_messages[0])) > 0:
-						status += " (" + str(access_status_messages[0]) + ")"
+					status += " (" + str(access_status_messages[0]) + ")"
 				return (response, status)
 			return (response, "")
 
