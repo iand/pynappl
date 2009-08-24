@@ -20,6 +20,7 @@ import store_test
 import job_test
 import file_manager_test
 import rdf_manager_test
+import store_config_test
 
 
 def suite():
@@ -56,6 +57,8 @@ def suite():
                             , unittest.TestLoader().loadTestsFromTestCase(file_manager_test.RetryFailuresTestCase)
 
                             , unittest.TestLoader().loadTestsFromTestCase(rdf_manager_test.ProcessFileTestCase)
+
+                            , unittest.TestLoader().loadTestsFromTestCase(store_config_test.StoreConfigTestCase)
                             ])
 
 
