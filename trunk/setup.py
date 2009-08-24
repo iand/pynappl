@@ -15,14 +15,12 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA	02110-1301 USA
 
 import sys
-from distutils.core import setup
+import distutils.core
+from pynappl  import __version__
 
-required = []
-version = '0.1.0'
-
-setup(
+distutils.core.setup(
 		name='pynappl',
-		version=version,
+		version=__version__,
 		description='Python client library for the Talis Platform',
 		long_description = """Pynappl makes it easy to interact with Talis Platform services through the Google Data APIs.""",
 		author='Ian Davis',
@@ -31,6 +29,13 @@ setup(
 		url='http://code.google.com/p/pynappl/',
 		packages=['pynappl'],
 		package_dir = {'pynappl':'src/pynappl'},
-		scripts=['bin/tstore', 'samples/numtriples.py', 'samples/rdfvalidate.py'],
-		install_requires=required,
+		requires=['rdflib'],
+		platforms = ["any"],
+		classifiers = ["Programming Language :: Python",
+									 "Topic :: Software Development :: Libraries :: Python Modules",
+									 "Operating System :: OS Independent",
+									 "Natural Language :: English",
+									 ],
+		download_url = "http://pynappl.googlecode.com/files/pynappl-%s.tar.gz" % __version__,
+
 		)
