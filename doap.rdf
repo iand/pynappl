@@ -1,0 +1,36 @@
+<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#" xmlns:doap="http://usefulinc.com/ns/doap#" xmlns:foaf="http://xmlns.com/foaf/0.1/" xmlns:admin="http://webns.net/mvcb/">
+	<doap:Project>
+	 <doap:name>pynappl</doap:name>
+	 <doap:shortname>pynappl</doap:shortname>
+	 <doap:shortdesc>A Python client library for the Talis Platform</doap:shortdesc>
+	 <doap:description>A Python client library for the Talis Platform</doap:description>
+	 <doap:homepage rdf:resource="http://code.google.com/p/pynappl/" />
+	 <doap:wiki rdf:resource="http://code.google.com/p/pynappl/w/list" />
+
+	 <doap:download-page rdf:resource="http://code.google.com/p/pynappl/downloads/list" />
+	 <doap:bug-database rdf:resource="http://code.google.com/p/pynappl/issues/list" />
+	 <doap:programming-language>Python</doap:programming-language>
+	 <doap:license rdf:resource="http://usefulinc.com/doap/licenses/gpl" />
+	 <doap:maintainer>
+		<foaf:Person rdf:about="http://iandavis.com/id/me">
+			 <foaf:name>Ian Davis</foaf:name>
+			 <foaf:homepage rdf:resource="http://iandavis.com/"/>
+
+			 <foaf:mbox_sha1sum>0faf39a6195a7cbd805aec710e30506f6c61cf58</foaf:mbox_sha1sum>
+		</foaf:Person>
+	 </doap:maintainer>
+	 <doap:developer>
+		<foaf:Person>
+			 <foaf:name>Kier Davis</foaf:name>
+			 <foaf:homepage rdf:resource="http://kierdavis.com/"/>
+		</foaf:Person>
+
+	 </doap:developer>
+	 <doap:repository>
+		 <doap:SVNRepository>
+			 <doap:browse rdf:resource='http://code.google.com/p/pynappl/source/browse/' />
+			 <doap:location rdf:resource='http://pynappl.googlecode.com/svn/trunk/' />
+		 </doap:SVNRepository>
+	 </doap:repository> 
+	</doap:Project>
+</rdf:RDF>
