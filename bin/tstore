@@ -3,6 +3,7 @@ import sys, getopt, os
 import math,time
 import pynappl
 import re
+from types import StringType
 
 def main():
 	try:
@@ -117,7 +118,7 @@ def main():
 	elif args[0] == "getfpmap":
 		getfpmap(store, raw)
 	elif args[0] == "getqprofile":
-		getqprofile(store)
+		getqprofile(store, raw)
 
 def error(msg):
 	print msg
@@ -211,7 +212,7 @@ def check_response((response, body)):
 		print "Username and/or password were not valid for this store"
 	else:
 		print "There was an error processing the request: %s" % (response.status)
-		if len(body) > 0:
+		if type(body) is StringType and len(body) > 0:
 			print body
 	sys.exit(2)
 
@@ -369,9 +370,13 @@ def getfpmap(store, raw):
 			print "%s -> %s" % (predicate, info['name'])
 
 
-def getqprofile(store):
-	(response, body) = check_response(store.read_query_profile(raw=True))
-	print body
+def getqprofile(store, raw):
+	(response, qp) = check_response(store.read_query_profile(raw))
+	if raw:
+		print qp
+	else:
+		for name, weight in qp.weights().items():
+			print "%s -> %s" % (name, weight)
 
 
 

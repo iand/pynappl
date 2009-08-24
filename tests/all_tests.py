@@ -62,6 +62,7 @@ def suite():
 
                             , unittest.TestLoader().loadTestsFromTestCase(store_config_test.StoreConfigTestCase)
                             , unittest.TestLoader().loadTestsFromTestCase(store_config_test.FPMapTestCase)
+                            , unittest.TestLoader().loadTestsFromTestCase(store_config_test.QueryProfileTestCase)
                             ])
 
 
