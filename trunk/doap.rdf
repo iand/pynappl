@@ -35,9 +35,10 @@
 		</foaf:Person>
 	 </doap:maintainer>
 	 <doap:developer>
-		<foaf:Person>
+		<foaf:Person rdf:about="http://iandavis.com/id/kier">
 			 <foaf:name>Kier Davis</foaf:name>
 			 <foaf:homepage rdf:resource="http://kierdavis.com/"/>
+			 <foaf:mbox_sha1sum>c553422dd9c3f4948a1698b4a76d89b3ee62eee7</foaf:mbox_sha1sum>
 		</foaf:Person>
 	 </doap:developer>
 	 <doap:repository>
