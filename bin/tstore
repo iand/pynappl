@@ -349,11 +349,11 @@ def	store_url(store, filename):
 		
 
 def getfpmap(store):
-	(response, body) = check_response(store.get_fpmap(raw=True))
+	(response, body) = check_response(store.read_fpmap(raw=True))
 	print body
 
 def getqprofile(store):
-	(response, body) = check_response(store.get_query_profile(raw=True))
+	(response, body) = check_response(store.read_query_profile(raw=True))
 	print body
 
 
