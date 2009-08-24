@@ -79,6 +79,8 @@ def main():
 		sampletype(store, url)
 	elif args[0] == "snapshot":
 		snapshot(store)
+	elif args[0] == "backup":
+		backup(store)
 	elif args[0] == "sparql":
 		if filename is not None:
 			sparql_file(store, filename)
@@ -236,6 +238,35 @@ def sampletype(store, url):
 	for result in body:
 		print "%s" % (str(result['s']))
 
+def backup(store):
+	(response, body) = check_response(store.schedule_snapshot())
+	if response.has_key('location'):
+		job_uri = response['location']
+		print "Snapshot job scheduled, URI is: %s" % job_uri
+		print "Waiting for snapshot to complete"
+		done = False
+		while not done:
+			(response, job) = check_response(store.read_job(job_uri))
+			if not job.has_started():
+				print "Job has not started yet"
+			elif job.has_completed():
+				print "Job has completed"
+				time.sleep(2)
+				(response, snapshot_list) = store.snapshots()
+				if len(snapshot_list) > 0:
+					print "Snapshot is at %s" % snapshot_list[0]
+				else:
+					print "No snapshot file found"
+				done = True
+				break
+			else:
+				msgs = job.progress_updates()
+				print "Job is in progress: %s" % msgs[-1]
+			time.sleep(10)
+
+	else:
+		print "Snapshot job was probably scheduled but no URI was returned for it"
+
 
 def snapshot(store):
 	(response, body) = check_response(store.schedule_snapshot())
@@ -266,8 +297,7 @@ def restore(store, url):
 		print "Restore job was probably scheduled but no URI was returned for it"
 		
 def jobstatus(store, url):
-	(response, body) = check_response(store.read_job(url))
-	job = pynappl.Job.parse(url, body)
+	(response, job) = check_response(store.read_job(url))
 	
 	type = "Unknown job"
 	if job.type == 'http://schemas.talis.com/2006/bigfoot/configuration#SnapshotJob':
@@ -280,20 +310,20 @@ def jobstatus(store, url):
 		type = "Reindex job"
 		
 	print "%s submitted %s, scheduled to run %s "  % (type, relative_time(time.mktime(job.created)), relative_time(time.mktime(job.start_time)))
-	if not job.has_started:
+	if not job.has_started():
 		print "This job has not started yet"
 	else:
-		if job.has_completed:
-			if job.was_successful:
-				print "It actually started %s and completed successfully %s with a status of %s" % (relative_time(time.mktime(job.actual_start_time)), relative_time(time.mktime(job.actual_start_time)), job.completion_message)
+		if job.has_completed():
+			if job.was_successful():
+				print "Processing started %s and completed successfully %s with a status of %s" % (relative_time(time.mktime(job.actual_start_time)), relative_time(time.mktime(job.end_time)), job.completion_message)
 			else:
-				print "It actually started %s and FAILED %s with a status of %s" % (relative_time(time.mktime(job.actual_start_time)), relative_time(time.mktime(job.actual_start_time)), job.completion_message)
+				print "Processing started %s and FAILED %s with a status of %s" % (relative_time(time.mktime(job.actual_start_time)), relative_time(time.mktime(job.end_time)), job.completion_message)
 				for update in job.progress_updates:
 					print "%s: %s" % (relative_time(time.mktime(update.time)), update.message)
 		else:
-			print "It actually started %s" % (relative_time(time.mktime(job.actual_start_time)))
+			print "Processing started %s, progress so far:" % (relative_time(time.mktime(job.actual_start_time)))
 			for update in job.progress_updates:
-				print "%s: %s" % (relative_time(time.mktime(update.time)), update.message)
+				print "* %s: %s" % (relative_time(time.mktime(update.time)), update.message)
 
 
 def	store_file(store, filename):

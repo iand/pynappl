@@ -28,6 +28,7 @@ class Store:
 		def __init__(self,uri, username = None, password = None, client = None):
 			if client is None:
 				self.client = httplib2.Http()
+				self.client.follow_all_redirects = True
 			else:
 				self.client = client
 				
@@ -230,3 +231,20 @@ class Store:
 					results.append(d)
 				return response, results
 			return response, body
+
+
+		def snapshots(self, raw=False):
+			"""Retrieve a list of snapshots"""
+			req_uri = self.build_uri("/snapshots")
+			(response, body) = self.client.request(req_uri, "GET", headers={"accept" : "application/rdf+xml"})
+			if raw:
+				return (response, body)
+			else:
+				snapshot_list = []
+				if response.status in range(200,300):
+					g = rdflib.ConjunctiveGraph();
+					g.parse(rdflib.StringInputSource(body), format="xml")
+					for snapshot_res in g.objects(subject = rdflib.URIRef(self.uri), predicate = rdflib.URIRef('http://schemas.talis.com/2006/bigfoot/configuration#snapshot')):
+						snapshot_list.append(str(snapshot_res))
+				return (response, snapshot_list)
+				
