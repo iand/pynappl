@@ -1,3 +1,19 @@
+<!--
+# Copyright (C) 2009 Talis Information Ltd.
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	See the
+# GNU General Public License for more details.
+
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA	02110-1301 USA
+-->
 <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#" xmlns:doap="http://usefulinc.com/ns/doap#" xmlns:foaf="http://xmlns.com/foaf/0.1/" xmlns:admin="http://webns.net/mvcb/">
 	<doap:Project>
 	 <doap:name>pynappl</doap:name>
@@ -15,7 +31,6 @@
 		<foaf:Person rdf:about="http://iandavis.com/id/me">
 			 <foaf:name>Ian Davis</foaf:name>
 			 <foaf:homepage rdf:resource="http://iandavis.com/"/>
-
 			 <foaf:mbox_sha1sum>0faf39a6195a7cbd805aec710e30506f6c61cf58</foaf:mbox_sha1sum>
 		</foaf:Person>
 	 </doap:maintainer>
@@ -24,7 +39,6 @@
 			 <foaf:name>Kier Davis</foaf:name>
 			 <foaf:homepage rdf:resource="http://kierdavis.com/"/>
 		</foaf:Person>
-
 	 </doap:developer>
 	 <doap:repository>
 		 <doap:SVNRepository>

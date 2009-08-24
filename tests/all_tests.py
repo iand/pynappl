@@ -40,6 +40,7 @@ def suite():
                             , unittest.TestLoader().loadTestsFromTestCase(store_test.AccessStatusTestCase)
                             , unittest.TestLoader().loadTestsFromTestCase(store_test.SparqlTestCase)
                             , unittest.TestLoader().loadTestsFromTestCase(store_test.SearchTestCase)
+                            , unittest.TestLoader().loadTestsFromTestCase(store_test.SnapshotsTestCase)
 
 
                             , unittest.TestLoader().loadTestsFromTestCase(job_test.ParseTestCase)

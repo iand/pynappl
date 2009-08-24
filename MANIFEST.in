@@ -1,0 +1,3 @@
+include COPYING *.rdf Makefile clean.py
+recursive-include samples *.txt *.py
+recursive-include bin *.txt *.py

@@ -1,10 +1,22 @@
-all: compile test clean
+PYTHON = python
+
+help:
+	@echo "Please use \`make <target>' where <target> is one of"
+	@echo "  all          clean directories, compile and  test  all source files"
+	@echo "  compile      compile all source files"
+	@echo "  test         run all tests"
+	@echo "  clean        clean all compiled files"
+
+all: clean compile test 
 
 compile:
-	python -m compileall .
+	$(PYTHON) -m compileall .
 
 test:
-	python tests/all_tests.py
+	$(PYTHON) tests/all_tests.py
 
 clean:
-	python clean.py
+	$(PYTHON) clean.py
+
+dist:
+	$(PYTHON) setup.py

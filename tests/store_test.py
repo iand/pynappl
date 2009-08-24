@@ -100,6 +100,22 @@ SELECT_DATA = """<?xml version="1.0"?>
 
 SEARCH_DATA="""<?xml version='1.0' encoding='UTF-8'?><rdf:RDF xmlns="http://purl.org/rss/1.0/" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:ns.0="http://purl.org/vocab/bio/0.1/" xmlns:relevance="http://a9.com/-/opensearch/extensions/relevance/1.0/" xmlns:ns.1="http://www.w3.org/2004/02/skos/core#" xmlns:ns.2="http://xmlns.com/foaf/0.1/" xmlns:ns.3="http://www.w3.org/2002/07/owl#" xmlns:os="http://a9.com/-/spec/opensearch/1.1/"><channel rdf:about="http://api.talis.com/stores/openlibrary/items?query=potter&amp;max=2&amp;offset=0&amp;sort=&amp;xsl=&amp;content-type="><title>potter</title><link>http://api.talis.com/stores/openlibrary/items?query=potter&amp;max=2&amp;offset=0&amp;sort=&amp;xsl=&amp;content-type=</link><description>Results of a search for potter on openlibrary</description><items><rdf:Seq rdf:about="urn:uuid:8f60e82f-d54f-4bbf-a401-a17248dba9b8"><rdf:li resource="http://ol.dataincubator.org/a/OL956224A" /><rdf:li resource="http://ol.dataincubator.org/a/OL953208A" /></rdf:Seq></items><os:startIndex>0</os:startIndex><os:itemsPerPage>2</os:itemsPerPage><os:totalResults>71</os:totalResults></channel><item rdf:about="http://ol.dataincubator.org/a/OL956224A"><title>Item</title><link>http://ol.dataincubator.org/a/OL956224A</link><ns.2:name>Norman Potter</ns.2:name><ns.1:prefLabel>Norman Potter</ns.1:prefLabel><ns.3:sameAs><rdf:Description rdf:about="http://openlibrary.org/a/OL956224A" /></ns.3:sameAs><rdf:type><rdf:Description rdf:about="http://xmlns.com/foaf/0.1/Person" /></rdf:type><relevance:score>1.0</relevance:score></item><item rdf:about="http://ol.dataincubator.org/a/OL953208A"><title>Item</title><link>http://ol.dataincubator.org/a/OL953208A</link><ns.2:name>Potter, Margaret</ns.2:name><ns.1:prefLabel>Potter, Margaret</ns.1:prefLabel><ns.3:sameAs><rdf:Description rdf:about="http://openlibrary.org/a/OL953208A" /></ns.3:sameAs><rdf:type><rdf:Description rdf:about="http://xmlns.com/foaf/0.1/Person" /></rdf:type><ns.0:event><rdf:Description rdf:about="http://ol.dataincubator.org/events/69910" /></ns.0:event><relevance:score>1.0</relevance:score></item></rdf:RDF>"""
 
+SNAPSHOT_DATA="""<rdf:RDF
+    xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+    xmlns:dc="http://purl.org/dc/elements/1.1/"
+    xmlns:j.0="http://schemas.talis.com/2006/bigfoot/configuration#" > 
+  <rdf:Description rdf:about="http://example.com/store">
+    <j.0:snapshot rdf:resource="http://example.com/store/snapshots/20090821120029.tar"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://example.com/store/snapshots/20090821120029.tar">
+    <j.0:md5 rdf:resource="http://example.com/store/snapshots/20090821120029.tar.md5"/>
+    <j.0:filesize>1 MB</j.0:filesize>
+    <dc:date>12:00 21-August-2009</dc:date>
+  </rdf:Description>
+</rdf:RDF>"""
+
+
+
 class BuildUriTestCase(unittest.TestCase):
 
   def test_build_uri_abs(self):
@@ -738,6 +754,42 @@ class SearchTestCase(unittest.TestCase):
     self.assertEqual('application/rss+xml', headers['accept'])
 
   
+class SnapshotsTestCase(unittest.TestCase):
+  """Test cases for snapshot methods"""
+
+  def test_snapshots_performs_get_on_snapshots_uri(self):
+    client = MockHttp()
+    client.register('get', 'http://example.com/store/snapshots', SNAPSHOT_DATA, httplib2.Response({'content-type':'application/rdf+xml'}))
+    store = pynappl.Store('http://example.com/store', client=client)
+    (resp, body) = store.snapshots(raw = True)
+    self.assertTrue(client.received_request('get', 'http://example.com/store/snapshots'))
+
+  def test_snaphots_returns_raw_result(self):
+    client = MockHttp()
+    client.register('get', 'http://example.com/store/snapshots', SNAPSHOT_DATA, httplib2.Response({'content-type':'application/rdf+xml'}))
+    store = pynappl.Store('http://example.com/store', client=client)
+    (resp, body) = store.snapshots(raw = True)
+    self.assertEqual(SNAPSHOT_DATA, body)
+
+  def test_snapshots_sets_accept(self):
+    client = MockHttp()
+    client.register('get', 'http://example.com/store/snapshots', SNAPSHOT_DATA, httplib2.Response({'content-type':'application/rdf+xml'}))
+    store = pynappl.Store('http://example.com/store', client=client)
+    (resp, body) = store.snapshots(raw = True)
+    
+    (headers, body) = client.get_request('get', 'http://example.com/store/snapshots')
+    self.assertTrue(headers.has_key('accept'))
+    self.assertEqual('application/rdf+xml', headers['accept'])
+
+  def test_snaphots_returns_array_of_snapshot_uris(self):
+    client = MockHttp()
+    client.register('get', 'http://example.com/store/snapshots', SNAPSHOT_DATA, httplib2.Response({'content-type':'application/rdf+xml'}))
+    store = pynappl.Store('http://example.com/store', client=client)
+    (resp, snapshot_list) = store.snapshots()
+    self.assertEqual(1, len(snapshot_list))
+    self.assertEqual("http://example.com/store/snapshots/20090821120029.tar", snapshot_list[0])
+
+
 if __name__ == "__main__":
   unittest.main()
 
