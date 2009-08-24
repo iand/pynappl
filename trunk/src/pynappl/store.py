@@ -69,8 +69,8 @@ class Store:
 			"""Store the result of fetching a URL in the Metabox associated with this store"""
 			(response, body) = self.client.request(url, "GET", headers={"accept" : "application/rdf+xml, application/xml;q=0.1, text/xml;q=0.1"})
 			
-			if response.status > 299:
-				raise "Unable to read data from %s. Response was %s %s " % (url, response.status, response.reason) 
+			if response.status not in range (200,300):
+				raise PynapplError("Unable to read data from %s. Response was %s %s " % (url, response.status, response.reason) )
 			return self.store_data(body, graph_name)
 
 
@@ -92,7 +92,7 @@ class Store:
 
 		def response_body_as_graph(self, response, body, format="xml"):
 			g = rdflib.ConjunctiveGraph()
-			if response.status < 300:
+			if response.status in range (200,300):
 				g.parse(rdflib.StringInputSource(body), format=format)
 			return (response, g)
 
@@ -240,7 +240,7 @@ class Store:
 			if raw:
 				return (response, body)
 			else:
-				snapshot_list = []
+				snapshot_list = []	
 				if response.status in range(200,300):
 					g = rdflib.ConjunctiveGraph();
 					g.parse(rdflib.StringInputSource(body), format="xml")
