@@ -706,25 +706,25 @@ class SnapshotsTestCase(unittest.TestCase):
 class FpmapTestCase(unittest.TestCase):
   """Test cases for fpmap methods"""
 
-  def test_get_fpmap_performs_get_on_fpmap_uri(self):
+  def test_read_fpmap_performs_get_on_fpmap_uri(self):
     client = MockHttp()
     client.register('get', 'http://example.com/store/config/fpmaps/1', FPMAP_DATA, httplib2.Response({'content-type':'application/rdf+xml'}))
     store = pynappl.Store('http://example.com/store', client=client)
-    (resp, body) = store.get_fpmap(raw = True)
+    (resp, body) = store.read_fpmap(raw = True)
     self.assertTrue(client.received_request('get', 'http://example.com/store/config/fpmaps/1'))
 
-  def test_get_fpmap_returns_raw_result(self):
+  def test_read_fpmap_returns_raw_result(self):
     client = MockHttp()
     client.register('get', 'http://example.com/store/config/fpmaps/1', FPMAP_DATA, httplib2.Response({'content-type':'application/rdf+xml'}))
     store = pynappl.Store('http://example.com/store', client=client)
-    (resp, body) = store.get_fpmap(raw = True)
+    (resp, body) = store.read_fpmap(raw = True)
     self.assertEqual(FPMAP_DATA, body)
 
-  def test_get_fpmap_sets_accept(self):
+  def test_read_fpmap_sets_accept(self):
     client = MockHttp()
     client.register('get', 'http://example.com/store/config/fpmaps/1', FPMAP_DATA, httplib2.Response({'content-type':'application/rdf+xml'}))
     store = pynappl.Store('http://example.com/store', client=client)
-    (resp, body) = store.get_fpmap(raw = True)
+    (resp, body) = store.read_fpmap(raw = True)
     
     (headers, body) = client.get_request('get', 'http://example.com/store/config/fpmaps/1')
     self.assertTrue(headers.has_key('accept'))
@@ -735,25 +735,25 @@ class FpmapTestCase(unittest.TestCase):
 class QueryProfileTestCase(unittest.TestCase):
   """Test cases for queryprofile methods"""
 
-  def test_get_query_profile_performs_get_on_fpmap_uri(self):
+  def test_read_query_profile_performs_get_on_fpmap_uri(self):
     client = MockHttp()
     client.register('get', 'http://example.com/store/config/queryprofiles/1', QPROFILE_DATA, httplib2.Response({'content-type':'application/rdf+xml'}))
     store = pynappl.Store('http://example.com/store', client=client)
-    (resp, body) = store.get_query_profile(raw = True)
+    (resp, body) = store.read_query_profile(raw = True)
     self.assertTrue(client.received_request('get', 'http://example.com/store/config/queryprofiles/1'))
 
-  def test_get_query_profile_returns_raw_result(self):
+  def test_read_query_profile_returns_raw_result(self):
     client = MockHttp()
     client.register('get', 'http://example.com/store/config/queryprofiles/1', QPROFILE_DATA, httplib2.Response({'content-type':'application/rdf+xml'}))
     store = pynappl.Store('http://example.com/store', client=client)
-    (resp, body) = store.get_query_profile(raw = True)
+    (resp, body) = store.read_query_profile(raw = True)
     self.assertEqual(QPROFILE_DATA, body)
 
-  def test_get_query_profile_sets_accept(self):
+  def test_read_query_profile_sets_accept(self):
     client = MockHttp()
     client.register('get', 'http://example.com/store/config/queryprofiles/1', QPROFILE_DATA, httplib2.Response({'content-type':'application/rdf+xml'}))
     store = pynappl.Store('http://example.com/store', client=client)
-    (resp, body) = store.get_query_profile(raw = True)
+    (resp, body) = store.read_query_profile(raw = True)
     
     (headers, body) = client.get_request('get', 'http://example.com/store/config/queryprofiles/1')
     self.assertTrue(headers.has_key('accept'))
