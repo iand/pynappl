@@ -61,6 +61,7 @@ def suite():
                             , unittest.TestLoader().loadTestsFromTestCase(rdf_manager_test.ProcessFileTestCase)
 
                             , unittest.TestLoader().loadTestsFromTestCase(store_config_test.StoreConfigTestCase)
+                            , unittest.TestLoader().loadTestsFromTestCase(store_config_test.FPMapTestCase)
                             ])
 
 
