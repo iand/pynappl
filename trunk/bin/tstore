@@ -111,6 +111,10 @@ def main():
 			store_url(store, url)
 		else:
 			error("file or url not specified")
+	elif args[0] == "getfpmap":
+		getfpmap(store)
+	elif args[0] == "getqprofile":
+		getqprofile(store)
 
 def error(msg):
 	print msg
@@ -124,6 +128,8 @@ Actions:
  backup          [NotImpl] take a snapshot of a store, wait for it to complete
                  and then download it to the local system
  describe        fetch the description of a resource
+ getfpmap        fetch the field/predicate map for the store
+ getqprofile     fetch the query profile for the store
  jobstatus       show the progress status of a scheduled job
  reindex         schedule a store to be reindexed
  reset           schedule all data in a store to be deleted
@@ -342,8 +348,13 @@ def	store_url(store, filename):
 		print "File was successfully processed by store"
 		
 
+def getfpmap(store):
+	(response, body) = check_response(store.get_fpmap(raw=True))
+	print body
 
-
+def getqprofile(store):
+	(response, body) = check_response(store.get_query_profile(raw=True))
+	print body
 
 
 
