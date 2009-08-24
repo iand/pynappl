@@ -14,19 +14,11 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA	02110-1301 USA
 
-__all__ = ["Job", "JobUpdate", "JOB_STATUS_SUCCESS", "JOB_STATUS_ABORTED",
-	"JOB_TYPE_RESET", "JOB_TYPE_SNAPSHOT", "JOB_TYPE_REINDEX", "JOB_TYPE_RESTORE"]
+__all__ = ["Job", "JobUpdate"]
 
 import time
 import rdflib
-
-JOB_STATUS_SUCCESS = "http://schemas.talis.com/2006/bigfoot/configuration#success"
-JOB_STATUS_ABORTED = "http://schemas.talis.com/2006/bigfoot/configuration#aborted"
-
-JOB_TYPE_RESET = "http://schemas.talis.com/2006/bigfoot/configuration#ResetDataJob"
-JOB_TYPE_SNAPSHOT = "http://schemas.talis.com/2006/bigfoot/configuration#SnapshotJob"
-JOB_TYPE_REINDEX = "http://schemas.talis.com/2006/bigfoot/configuration#ReindexJob"
-JOB_TYPE_RESTORE = "http://schemas.talis.com/2006/bigfoot/configuration#RestoreJob"
+import constants
 
 class Job:
 	uri = None
@@ -92,7 +84,7 @@ class Job:
 		start_time = time.strptime(str(g.objects(s, rdflib.URIRef("http://schemas.talis.com/2006/bigfoot/configuration#startTime")).next()), "%Y-%m-%dT%H:%M:%SZ")
 		job = Job(uri, type, label, start_time, created)
 		
-		if type == "http://schemas.talis.com/2006/bigfoot/configuration#RestoreJob":
+		if type == constants.JOB_TYPE_RESTORE:
 			objects = list(g.objects(s, rdflib.URIRef("http://schemas.talis.com/2006/bigfoot/snapshotUri")))
 			if len(objects):
 				job.snapshot_uri = str(objects[0])
@@ -156,7 +148,7 @@ class Job:
 	
 	def was_successful(self):
 		"""Was the job successful?"""
-		return self.has_completed() and self.completion_status == JOB_STATUS_SUCCESS
+		return self.has_completed() and self.completion_status == constants.JOB_STATUS_SUCCESS
 	
 	def is_running(self):
 		"""Is the job still running?"""
