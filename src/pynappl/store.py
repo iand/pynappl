@@ -248,3 +248,20 @@ class Store:
 						snapshot_list.append(str(snapshot_res))
 				return (response, snapshot_list)
 				
+		def get_config(self):
+			return pynappl.StoreConfig(self.build_uri("/config"))
+				
+		def get_fpmap(self, raw=False):
+			"""Retrieve the field/predicate map (the first one if there are multiple)"""
+			config = self.get_config()
+			(response, body) = self.client.request(config.get_first_fpmap_uri(), "GET", headers={"accept" : "application/rdf+xml"})
+			if raw:
+				return (response, body)
+
+				
+		def get_query_profile(self, raw=False):
+			"""Retrieve the field/predicate map (the first one if there are multiple)"""
+			config = self.get_config()
+			(response, body) = self.client.request(config.get_first_query_profile_uri(), "GET", headers={"accept" : "application/rdf+xml"})
+			if raw:
+				return (response, body)
