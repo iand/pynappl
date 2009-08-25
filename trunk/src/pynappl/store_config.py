@@ -99,23 +99,36 @@ class StoreConfig:
 					return 'http://api.talis.com/stores/%s/indexes/cnimages/queryprofiles/default' % store_name
 			return '%s/queryprofiles/1' % self.uri
 			
-
-class FieldPredicateMap():
+class ResourceDescription():
 	def __init__(self, uri):
 		self.uri = uri
 		self.init_graph()
-		
+
 	def init_graph(self):
 		self.g = rdflib.ConjunctiveGraph()
 		self.g.bind('frm', FRAME)
 		self.g.bind('bf', BF)
+
+	def graph(self):
+		return self.g
 		
+	def from_rdfxml(self, data):
+		self.init_graph()
+		self.g.parse(rdflib.StringInputSource(data), format="xml")
+
+	def to_rdfxml(self):
+		return self.g.serialize(format='xml')
+
+
+class FieldPredicateMap(ResourceDescription):
+	
 	def add_mapping(self, property, name, analyzer = None):
 		self.remove_mapping(property)
-		mapping_uri = "%s#%s" % (self.uri, name)
+		norm_name = re.sub('[^a-zA-Z]', '', name).strip().lower()
+		mapping_uri = "%s#%s" % (self.uri, norm_name)
 		self.g.add( (rdflib.URIRef(self.uri), FRAME["mappedDatatypeProperty"], rdflib.URIRef(mapping_uri) ) )
 		self.g.add( (rdflib.URIRef(mapping_uri), FRAME["property"], rdflib.URIRef(property) ) )
-		self.g.add( (rdflib.URIRef(mapping_uri), FRAME["name"], rdflib.Literal(name) ) )
+		self.g.add( (rdflib.URIRef(mapping_uri), FRAME["name"], rdflib.Literal(norm_name) ) )
 		if analyzer is not None:
 			self.g.add( (rdflib.URIRef(mapping_uri), BF["analyzer"], rdflib.URIRef(analyzer) ) )
 		
@@ -138,31 +151,7 @@ class FieldPredicateMap():
 				mapping_list[str(properties[0])] = { 'name' : str(names[0]) }
 		return mapping_list
 	
-
-	def graph(self):
-		return self.g
-		
-	def from_rdfxml(self, data):
-		self.init_graph()
-		self.g.parse(rdflib.StringInputSource(data), format="xml")
-
-
-class QueryProfile():
-	def __init__(self, uri):
-		self.uri = uri
-		self.init_graph()
-		
-	def init_graph(self):
-		self.g = rdflib.ConjunctiveGraph()
-		self.g.bind('frm', FRAME)
-		self.g.bind('bf', BF)
-
-	def graph(self):
-		return self.g
-		
-	def from_rdfxml(self, data):
-		self.init_graph()
-		self.g.parse(rdflib.StringInputSource(data), format="xml")
+class QueryProfile(ResourceDescription):
 
 	def add_field_weight(self, name, weight):
 		self.remove_field_weight(name)
