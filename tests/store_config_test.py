@@ -475,6 +475,12 @@ class FPMapTestCase(unittest.TestCase):
 		self.assertEqual(1, len(names))
 		self.assertEqual("prednew", str(names[0]))
 
+	def test_add_mapping_normalises_name(self):
+		fpmap = pynappl.FieldPredicateMap("http://example.com/store/fpmaps/1")
+		fpmap.add_mapping("http://example.com/pred", "PR.E D!")
+		mappings = fpmap.mappings()
+		self.assertEqual("pred", mappings["http://example.com/pred"]['name'])
+
 
 class QueryProfileTestCase(unittest.TestCase):
 	def test_uri(self):
