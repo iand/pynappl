@@ -211,7 +211,7 @@ def check_response((response, body)):
 	elif response.status == 401:
 		print "Username and/or password were not valid for this store"
 	else:
-		print "There was an error processing the request: %s" % (response.status)
+		print "There was an error processing the request: %d" % (response.status)
 		if type(body) is StringType and len(body) > 0:
 			print body
 	sys.exit(2)
