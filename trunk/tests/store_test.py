@@ -612,6 +612,38 @@ class SparqlTestCase(unittest.TestCase):
 		(resp, body) = store.select('select * where {?s a ?o} limit 10', raw = True)
 		self.assertEqual(SELECT_DATA, body)
 
+<<<<<<< .mine
+  def test_select_sets_accept(self):
+    client = MockHttp()
+    uri = 'http://example.com/store/services/sparql?query=' + urllib.quote_plus('select * where {?s a ?o} limit 10')
+    client.register('get', uri, SELECT_DATA, httplib2.Response({'content-type':'application/sparql-results+xml'}))
+    store = pynappl.Store('http://example.com/store', client=client)
+    (resp, body) = store.select('select * where {?s a ?o} limit 10', raw = True)
+    
+    (headers, body) = client.get_request('get', uri)
+    self.assertTrue(headers.has_key('accept'))
+    self.assertEqual('application/rdf+xml,application/sparql-results+xml', headers['accept'])
+  
+  def test_select_parse_result_correctly(self):
+    client = MockHttp()
+    uri = 'http://example.com/store/services/sparql?query=' + urllib.quote_plus('select * where {?s a ?o} limit 10')
+    client.register('get', uri, SELECT_DATA, httplib2.Response({'content-type':'application/sparql-results+xml'}))
+    store = pynappl.Store('http://example.com/store', client=client)
+    resp, result = store.select('select * where {?s a ?o} limit 10')
+    
+    headers, results = result
+    
+    self.assertEqual(["s", "o"], headers)
+    self.assertEqual(2, len(results))
+    
+    self.assertEqual(["s", "o"], results[0].keys())
+    self.assertEqual(rdflib.URIRef("http://oecd.dataincubator.org/"), results[0]["s"])
+    self.assertEqual(rdflib.URIRef("http://rdfs.org/ns/void#Dataset"), results[0]["o"])
+    
+    self.assertEqual(["s", "o"], results[1].keys())
+    self.assertEqual(rdflib.URIRef("http://oecd.dataincubator.org/glossary/segments/economic-outlook"), results[1]["s"])
+    self.assertEqual(rdflib.URIRef("http://www.w3.org/2004/02/skos/core#Collection"), results[1]["o"])
+=======
 	def test_select_sets_accept(self):
 		client = MockHttp()
 		uri = 'http://example.com/store/services/sparql?query=' + urllib.quote_plus('select * where {?s a ?o} limit 10')
@@ -639,6 +671,7 @@ class SparqlTestCase(unittest.TestCase):
 		self.assertEqual(["s", "o"], results[1].keys())
 		self.assertEqual(rdflib.URIRef("http://oecd.dataincubator.org/glossary/segments/economic-outlook"), results[1]["s"])
 		self.assertEqual(rdflib.URIRef("http://www.w3.org/2004/02/skos/core#Collection"), results[1]["o"])
+>>>>>>> .r65
 
 class SearchTestCase(unittest.TestCase):
 	"""Test cases for search methods"""

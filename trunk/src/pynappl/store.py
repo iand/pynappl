@@ -207,8 +207,10 @@ class Store:
 			if raw:
 				return response, body
 			if response.status in range(200, 300):
-				results = []
 				tree = et.fromstring(body)
+				head = tree.find("{http://www.w3.org/2005/sparql-results#}head")
+				headers = [x.get("name") for x in head.findall("{http://www.w3.org/2005/sparql-results#}variable")]
+				results = []
 				for result in tree.find("{http://www.w3.org/2005/sparql-results#}results").findall("{http://www.w3.org/2005/sparql-results#}result"):
 					d = {}
 					for binding in result.findall("{http://www.w3.org/2005/sparql-results#}binding"):
@@ -229,7 +231,7 @@ class Store:
 							value = rdflib.URIRef(uri.text)
 						d[name] = value
 					results.append(d)
-				return response, results
+				return response, (headers, results)
 			return response, body
 
 
