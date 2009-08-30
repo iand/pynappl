@@ -1,0 +1,124 @@
+#!/usr/bin/python
+import pygtk, sys
+pygtk.require("2.0")
+import gtk, pynappl
+class main:
+	def msg(self, msg, iserror=False):
+		if iserror:
+			dialog = self.builder.get_object("dialog3")
+			label = self.builder.get_object("label5")
+			label.set_text(msg)
+			dialog.show_all()
+			dialog.run()
+			dialog.hide_all()
+		else:
+			dialog = self.builder.get_object("dialog2")
+			label = self.builder.get_object("label4")
+			label.set_text(msg)
+			dialog.show_all()
+			dialog.run()
+			dialog.hide_all()
+	def __init__(self):
+		self.store_uri = None
+		self.username = None
+		self.password = None
+		self.store = None
+		self.builder = gtk.Builder()
+		self.builder.add_from_file("tstore-gui-ui.glade")
+		self.builder.connect_signals({
+			"on_imagemenuitem1_activate" : self.connect,
+			"on_imagemenuitem2_activate" : self.status,
+			"on_imagemenuitem3_activate" : self.select,
+			"on_menuitem2_activate" : gtk.main_quit,
+			"on_toolbutton1_clicked" : self.connect,
+			"on_toolbutton2_clicked" : gtk.main_quit,
+			"on_toolbutton3_clicked" : self.status,
+			"on_toolbutton4_clicked" : self.select,
+			"on_toolbutton5_clicked" : self.select_exec,
+			"on_toolbutton6_clicked" : self.select_close,
+			"on_window1_destroy" : gtk.main_quit,
+		}, None)
+		self.objects = self.builder.get_objects() # keep a reference to all objects, otherwise segfault occurs
+		self.sb = self.builder.get_object("statusbar1")
+		self.cid_current_store = self.sb.get_context_id("current store")
+		self.cid_current_action = self.sb.get_context_id("current action")
+		self.sb.push(self.cid_current_store, "Not connected to a store")
+		self.select_table = self.builder.get_object("table1")
+		window = self.builder.get_object("window1")
+		window.maximize()
+		window.show_all()
+		self.select_close()
+		gtk.main()
+	def connect(self, *gtkargs):
+		dialog = self.builder.get_object("dialog1")
+		entry1 = self.builder.get_object("entry1")
+		entry2 = self.builder.get_object("entry2")
+		entry3 = self.builder.get_object("entry3")
+		dialog.show_all()
+		resp = dialog.run()
+		dialog.hide_all()
+		if resp == 1:
+			self.store_uri = entry1.get_text()
+			self.username = entry2.get_text()
+			self.password = entry3.get_text()
+			self.store = pynappl.Store(self.store_uri, self.username, self.password)
+			self.sb.pop(self.cid_current_store)
+			self.sb.push(self.cid_current_store, "Current store: %s" % self.store_uri)
+		entry1.set_text("http://api.talis.com/stores/")
+		entry2.set_text("")
+		entry3.set_text("")
+		self.builder.get_object("toolbutton3").set_sensitive(True)
+		self.builder.get_object("toolbutton4").set_sensitive(True)
+		self.builder.get_object("imagemenuitem2").set_sensitive(True)
+		self.builder.get_object("imagemenuitem3").set_sensitive(True)
+	def status(self, *gtkargs):
+		self.sb.push(self.cid_current_action, "Getting status of store '%s'" % self.store_uri)
+		response, status = self.store.status()
+		self.sb.pop(self.cid_current_action)
+		if response.status not in range(200, 300):
+			self.msg("Could not fetch status (HTTP error %d)" % response.status, True)
+		else:
+			self.msg(status.capitalize(), False)
+	def select(self, *gtkargs):
+		self.builder.get_object("vpaned1").show_all()
+		self.builder.get_object("toolbutton5").show_all()
+		self.builder.get_object("toolbutton6").show_all()
+		self.builder.get_object("separatortoolitem3").show_all()
+		self.builder.get_object("menuitem4").show_all()
+	def select_exec(self, *gtkargs):
+		buffer = self.builder.get_object("textbuffer1")
+		query = buffer.get_text(buffer.get_start_iter(), buffer.get_end_iter())
+		self.sb.push(self.cid_current_action, "Querying store '%s'" % self.store_uri)
+		response, result = self.store.select(query)
+		self.sb.pop(self.cid_current_action)
+		if response.status not in range(200, 300):
+			self.msg("Could not fetch status (HTTP error %d)" % response.status, True)
+		else:
+			headers, results = result
+			print headers, results
+			self.select_table.destroy()
+			self.select_table = gtk.Table(len(results) + 1, len(headers))
+			i = 0
+			for header in headers:
+				self.select_table.attach(gtk.Label(header), i, i + 1, 0, 1)
+				i += 1
+			i = 1
+			for d in results:
+				j = 0
+				vals = []
+				for header in headers:
+					vals.append(d[header])
+				for v in vals:
+					self.select_table.attach(gtk.Label(v), j, j + 1, i, i + 1)
+					j += 1
+				i += 1
+			self.builder.get_object("vpaned1").add2(self.select_table)
+			self.select_table.show_all()
+	def select_close(self, *gtkargs):
+		self.builder.get_object("vpaned1").hide_all()
+		self.builder.get_object("toolbutton5").hide_all()
+		self.builder.get_object("toolbutton6").hide_all()
+		self.builder.get_object("separatortoolitem3").hide_all()
+		self.builder.get_object("menuitem4").hide_all()
+if __name__ == "__main__":
+	main()
