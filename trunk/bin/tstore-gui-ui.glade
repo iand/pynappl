@@ -2,31 +2,39 @@
 <interface>
   <requires lib="gtk+" version="2.16"/>
   <!-- interface-naming-policy project-wide -->
-  <object class="GtkWindow" id="window1">
-    <signal name="destroy" handler="on_window1_destroy"/>
+  <object class="GtkTreeStore" id="trsStoreList">
+    <columns>
+      <!-- column-name gchararray1 -->
+      <column type="gchararray"/>
+      <!-- column-name gchararray2 -->
+      <column type="gchararray"/>
+    </columns>
+  </object>
+  <object class="GtkWindow" id="winMain">
+    <signal name="destroy" handler="on_winMain_destroy"/>
     <child>
-      <object class="GtkVBox" id="vbox1">
+      <object class="GtkVBox" id="vbxMain">
         <property name="visible">True</property>
         <property name="orientation">vertical</property>
         <child>
-          <object class="GtkMenuBar" id="menubar1">
+          <object class="GtkMenuBar" id="mnbMain">
             <property name="visible">True</property>
             <child>
-              <object class="GtkMenuItem" id="menuitem1">
+              <object class="GtkMenuItem" id="mniStore">
                 <property name="visible">True</property>
                 <property name="label" translatable="yes">_Store</property>
                 <property name="use_underline">True</property>
                 <child type="submenu">
-                  <object class="GtkMenu" id="menu1">
+                  <object class="GtkMenu" id="mnuStore">
                     <property name="visible">True</property>
                     <child>
-                      <object class="GtkImageMenuItem" id="imagemenuitem1">
+                      <object class="GtkImageMenuItem" id="mniStoreConnect">
                         <property name="label" translatable="yes">_Connect to store</property>
                         <property name="visible">True</property>
                         <property name="use_underline">True</property>
-                        <property name="image">image1</property>
+                        <property name="image">imgConnect</property>
                         <property name="use_stock">False</property>
-                        <signal name="activate" handler="on_imagemenuitem1_activate"/>
+                        <signal name="activate" handler="on_mniStoreConnect_activate"/>
                       </object>
                     </child>
                   </object>
@@ -34,33 +42,22 @@
               </object>
             </child>
             <child>
-              <object class="GtkMenuItem" id="menuitem3">
+              <object class="GtkMenuItem" id="mniAction">
                 <property name="visible">True</property>
                 <property name="label" translatable="yes">_Action</property>
                 <property name="use_underline">True</property>
                 <child type="submenu">
-                  <object class="GtkMenu" id="menu2">
+                  <object class="GtkMenu" id="mnuAction">
                     <property name="visible">True</property>
                     <child>
-                      <object class="GtkImageMenuItem" id="imagemenuitem2">
+                      <object class="GtkImageMenuItem" id="mniActionStatus">
                         <property name="label" translatable="yes">_Status</property>
                         <property name="visible">True</property>
                         <property name="sensitive">False</property>
                         <property name="use_underline">True</property>
-                        <property name="image">image3</property>
+                        <property name="image">imgStatus</property>
                         <property name="use_stock">False</property>
-                        <signal name="activate" handler="on_imagemenuitem2_activate"/>
-                      </object>
-                    </child>
-                    <child>
-                      <object class="GtkImageMenuItem" id="imagemenuitem3">
-                        <property name="label" translatable="yes">SPARQL _select query</property>
-                        <property name="visible">True</property>
-                        <property name="sensitive">False</property>
-                        <property name="use_underline">True</property>
-                        <property name="image">image2</property>
-                        <property name="use_stock">False</property>
-                        <signal name="activate" handler="on_imagemenuitem3_activate"/>
+                        <signal name="activate" handler="on_mniActionStatus_activate"/>
                       </object>
                     </child>
                   </object>
@@ -68,42 +65,12 @@
               </object>
             </child>
             <child>
-              <object class="GtkMenuItem" id="menuitem4">
-                <property name="visible">True</property>
-                <property name="label" translatable="yes">Q_uery</property>
-                <property name="use_underline">True</property>
-                <child type="submenu">
-                  <object class="GtkMenu" id="menu3">
-                    <property name="visible">True</property>
-                    <child>
-                      <object class="GtkImageMenuItem" id="imagemenuitem4">
-                        <property name="label" translatable="yes">_Execute query</property>
-                        <property name="visible">True</property>
-                        <property name="use_underline">True</property>
-                        <property name="image">image4</property>
-                        <property name="use_stock">False</property>
-                      </object>
-                    </child>
-                    <child>
-                      <object class="GtkImageMenuItem" id="imagemenuitem5">
-                        <property name="label" translatable="yes">_Close editor</property>
-                        <property name="visible">True</property>
-                        <property name="use_underline">True</property>
-                        <property name="image">image5</property>
-                        <property name="use_stock">False</property>
-                      </object>
-                    </child>
-                  </object>
-                </child>
-              </object>
-            </child>
-            <child>
-              <object class="GtkMenuItem" id="menuitem2">
+              <object class="GtkMenuItem" id="mniQuit">
                 <property name="visible">True</property>
                 <property name="right_justified">True</property>
                 <property name="label" translatable="yes">_Quit</property>
                 <property name="use_underline">True</property>
-                <signal name="activate" handler="on_menuitem2_activate"/>
+                <signal name="activate" handler="on_mniQuit_activate"/>
               </object>
             </child>
           </object>
@@ -114,15 +81,15 @@
           </packing>
         </child>
         <child>
-          <object class="GtkToolbar" id="toolbar1">
+          <object class="GtkToolbar" id="tbrMain">
             <property name="visible">True</property>
             <child>
-              <object class="GtkToolButton" id="toolbutton1">
+              <object class="GtkToolButton" id="tbnConnect">
                 <property name="visible">True</property>
                 <property name="label" translatable="yes">Connect to store</property>
                 <property name="use_underline">True</property>
                 <property name="stock_id">gtk-connect</property>
-                <signal name="clicked" handler="on_toolbutton1_clicked"/>
+                <signal name="clicked" handler="on_tbnConnect_clicked"/>
               </object>
               <packing>
                 <property name="expand">False</property>
@@ -130,7 +97,7 @@
               </packing>
             </child>
             <child>
-              <object class="GtkSeparatorToolItem" id="separatortoolitem1">
+              <object class="GtkSeparatorToolItem" id="spi1">
                 <property name="visible">True</property>
               </object>
               <packing>
@@ -138,13 +105,13 @@
               </packing>
             </child>
             <child>
-              <object class="GtkToolButton" id="toolbutton3">
+              <object class="GtkToolButton" id="tbnStatus">
                 <property name="visible">True</property>
                 <property name="sensitive">False</property>
                 <property name="label" translatable="yes">Status</property>
                 <property name="use_underline">True</property>
                 <property name="stock_id">gtk-properties</property>
-                <signal name="clicked" handler="on_toolbutton3_clicked"/>
+                <signal name="clicked" handler="on_tbnStatus_clicked"/>
               </object>
               <packing>
                 <property name="expand">False</property>
@@ -152,21 +119,7 @@
               </packing>
             </child>
             <child>
-              <object class="GtkToolButton" id="toolbutton4">
-                <property name="visible">True</property>
-                <property name="sensitive">False</property>
-                <property name="label" translatable="yes">SPARQL select query</property>
-                <property name="use_underline">True</property>
-                <property name="stock_id">gtk-find</property>
-                <signal name="clicked" handler="on_toolbutton4_clicked"/>
-              </object>
-              <packing>
-                <property name="expand">False</property>
-                <property name="homogeneous">True</property>
-              </packing>
-            </child>
-            <child>
-              <object class="GtkSeparatorToolItem" id="separatortoolitem2">
+              <object class="GtkSeparatorToolItem" id="spi2">
                 <property name="visible">True</property>
               </object>
               <packing>
@@ -174,46 +127,12 @@
               </packing>
             </child>
             <child>
-              <object class="GtkToolButton" id="toolbutton5">
-                <property name="visible">True</property>
-                <property name="label" translatable="yes">Execute query</property>
-                <property name="use_underline">True</property>
-                <property name="stock_id">gtk-execute</property>
-                <signal name="clicked" handler="on_toolbutton5_clicked"/>
-              </object>
-              <packing>
-                <property name="expand">False</property>
-                <property name="homogeneous">True</property>
-              </packing>
-            </child>
-            <child>
-              <object class="GtkToolButton" id="toolbutton6">
-                <property name="visible">True</property>
-                <property name="label" translatable="yes">Close editor</property>
-                <property name="use_underline">True</property>
-                <property name="stock_id">gtk-close</property>
-                <signal name="clicked" handler="on_toolbutton6_clicked"/>
-              </object>
-              <packing>
-                <property name="expand">False</property>
-                <property name="homogeneous">True</property>
-              </packing>
-            </child>
-            <child>
-              <object class="GtkSeparatorToolItem" id="separatortoolitem3">
-                <property name="visible">True</property>
-              </object>
-              <packing>
-                <property name="expand">False</property>
-              </packing>
-            </child>
-            <child>
-              <object class="GtkToolButton" id="toolbutton2">
+              <object class="GtkToolButton" id="tbnQuit">
                 <property name="visible">True</property>
                 <property name="label" translatable="yes">Quit</property>
                 <property name="use_underline">True</property>
                 <property name="stock_id">gtk-quit</property>
-                <signal name="clicked" handler="on_toolbutton2_clicked"/>
+                <signal name="clicked" handler="on_tbnQuit_clicked"/>
               </object>
               <packing>
                 <property name="expand">False</property>
@@ -228,22 +147,70 @@
           </packing>
         </child>
         <child>
-          <object class="GtkVPaned" id="vpaned1">
+          <object class="GtkHPaned" id="hpnMain">
             <property name="visible">True</property>
             <property name="can_focus">True</property>
-            <property name="orientation">vertical</property>
+            <property name="position">50</property>
+            <property name="position_set">True</property>
             <child>
-              <object class="GtkScrolledWindow" id="scrolledwindow1">
+              <object class="GtkVBox" id="vbxStoreList">
                 <property name="visible">True</property>
-                <property name="can_focus">True</property>
-                <property name="hscrollbar_policy">automatic</property>
-                <property name="vscrollbar_policy">automatic</property>
+                <property name="orientation">vertical</property>
                 <child>
-                  <object class="GtkTextView" id="textview1">
+                  <object class="GtkScrolledWindow" id="scrStoreList">
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
-                    <property name="buffer">textbuffer1</property>
+                    <property name="hscrollbar_policy">automatic</property>
+                    <property name="vscrollbar_policy">automatic</property>
+                    <child>
+                      <object class="GtkTreeView" id="trvStoreList">
+                        <property name="visible">True</property>
+                        <property name="can_focus">True</property>
+                        <property name="model">trsStoreList</property>
+                        <signal name="row_activated" handler="on_trvStoreList_row_activated"/>
+                        <child>
+                          <object class="GtkTreeViewColumn" id="tvcStoreList">
+                            <property name="title">Stores</property>
+                            <child>
+                              <object class="GtkCellRendererText" id="crtStoreList"/>
+                              <attributes>
+                                <attribute name="text">0</attribute>
+                              </attributes>
+                            </child>
+                          </object>
+                        </child>
+                      </object>
+                    </child>
                   </object>
+                  <packing>
+                    <property name="position">0</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkHButtonBox" id="hbbStoreList">
+                    <property name="visible">True</property>
+                    <property name="layout_style">end</property>
+                    <child>
+                      <object class="GtkButton" id="btnStoreListRefresh">
+                        <property name="label" translatable="yes">gtk-refresh</property>
+                        <property name="visible">True</property>
+                        <property name="can_focus">True</property>
+                        <property name="receives_default">True</property>
+                        <property name="use_stock">True</property>
+                        <signal name="clicked" handler="on_btnStoreListRefresh_clicked"/>
+                      </object>
+                      <packing>
+                        <property name="expand">False</property>
+                        <property name="fill">False</property>
+                        <property name="position">0</property>
+                      </packing>
+                    </child>
+                  </object>
+                  <packing>
+                    <property name="expand">False</property>
+                    <property name="fill">False</property>
+                    <property name="position">1</property>
+                  </packing>
                 </child>
               </object>
               <packing>
@@ -252,21 +219,141 @@
               </packing>
             </child>
             <child>
-              <object class="GtkScrolledWindow" id="scrolledwindow2">
+              <object class="GtkNotebook" id="nbkMain">
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
-                <property name="hscrollbar_policy">automatic</property>
-                <property name="vscrollbar_policy">automatic</property>
                 <child>
-                  <object class="GtkTable" id="table1">
+                  <object class="GtkVBox" id="vbxTabMain">
                     <property name="visible">True</property>
+                    <property name="orientation">vertical</property>
                     <child>
-                      <object class="GtkLabel" id="label6">
-                        <property name="visible">True</property>
-                        <property name="ypad">10</property>
-                      </object>
+                      <placeholder/>
                     </child>
                   </object>
+                </child>
+                <child type="tab">
+                  <object class="GtkLabel" id="lblTabMain">
+                    <property name="visible">True</property>
+                    <property name="label" translatable="yes">Main</property>
+                  </object>
+                  <packing>
+                    <property name="tab_fill">False</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkVPaned" id="vpnTabSparqlSelect">
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="orientation">vertical</property>
+                    <child>
+                      <object class="GtkVBox" id="vbxSparqlSelectEditor">
+                        <property name="visible">True</property>
+                        <property name="orientation">vertical</property>
+                        <child>
+                          <object class="GtkScrolledWindow" id="scrSparqlSelectEditor">
+                            <property name="visible">True</property>
+                            <property name="can_focus">True</property>
+                            <property name="hscrollbar_policy">automatic</property>
+                            <property name="vscrollbar_policy">automatic</property>
+                            <child>
+                              <object class="GtkTextView" id="txtSparqlSelectEditor">
+                                <property name="visible">True</property>
+                                <property name="can_focus">True</property>
+                                <property name="left_margin">3</property>
+                                <property name="right_margin">3</property>
+                                <property name="buffer">txbSparqlSelectEditor</property>
+                              </object>
+                            </child>
+                          </object>
+                          <packing>
+                            <property name="padding">8</property>
+                            <property name="position">0</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkHButtonBox" id="hbbSparqlSelectActions">
+                            <property name="visible">True</property>
+                            <property name="layout_style">end</property>
+                            <child>
+                              <object class="GtkButton" id="btnSparqlSelectExecute">
+                                <property name="label" translatable="yes">Execute query</property>
+                                <property name="visible">True</property>
+                                <property name="can_focus">True</property>
+                                <property name="receives_default">True</property>
+                                <property name="image">imgExecute</property>
+                                <signal name="clicked" handler="on_btnSparqlSelectExecute_clicked"/>
+                              </object>
+                              <packing>
+                                <property name="expand">False</property>
+                                <property name="fill">False</property>
+                                <property name="padding">5</property>
+                                <property name="position">0</property>
+                              </packing>
+                            </child>
+                          </object>
+                          <packing>
+                            <property name="expand">False</property>
+                            <property name="fill">False</property>
+                            <property name="position">1</property>
+                          </packing>
+                        </child>
+                      </object>
+                      <packing>
+                        <property name="resize">True</property>
+                        <property name="shrink">True</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkHBox" id="hbxSparqlSelectResults">
+                        <property name="visible">True</property>
+                        <child>
+                          <object class="GtkScrolledWindow" id="scrSparqlSelectResults">
+                            <property name="visible">True</property>
+                            <property name="can_focus">True</property>
+                            <property name="hscrollbar_policy">automatic</property>
+                            <property name="vscrollbar_policy">automatic</property>
+                            <child>
+                              <object class="GtkEventBox" id="evbSparqlSelectResults">
+                                <property name="visible">True</property>
+                                <child>
+                                  <object class="GtkTable" id="tblSparqlSelectResults">
+                                    <property name="visible">True</property>
+                                    <child>
+                                      <object class="GtkLabel" id="lblSparqlSelectResultsPlaceholder">
+                                        <property name="visible">True</property>
+                                        <property name="ypad">10</property>
+                                      </object>
+                                    </child>
+                                  </object>
+                                </child>
+                              </object>
+                            </child>
+                          </object>
+                          <packing>
+                            <property name="padding">8</property>
+                            <property name="position">0</property>
+                          </packing>
+                        </child>
+                      </object>
+                      <packing>
+                        <property name="resize">True</property>
+                        <property name="shrink">True</property>
+                      </packing>
+                    </child>
+                  </object>
+                  <packing>
+                    <property name="position">1</property>
+                  </packing>
+                </child>
+                <child type="tab">
+                  <object class="GtkLabel" id="lblTabSparqlSelect">
+                    <property name="visible">True</property>
+                    <property name="label" translatable="yes">SPARQL select</property>
+                  </object>
+                  <packing>
+                    <property name="position">1</property>
+                    <property name="tab_fill">False</property>
+                  </packing>
                 </child>
               </object>
               <packing>
@@ -280,7 +367,7 @@
           </packing>
         </child>
         <child>
-          <object class="GtkStatusbar" id="statusbar1">
+          <object class="GtkStatusbar" id="sbrMain">
             <property name="visible">True</property>
             <property name="spacing">2</property>
           </object>
@@ -292,21 +379,21 @@
       </object>
     </child>
   </object>
-  <object class="GtkDialog" id="dialog1">
+  <object class="GtkDialog" id="dlgConnectDetails">
     <property name="border_width">5</property>
     <property name="title" translatable="yes">Connect to store</property>
     <property name="type_hint">normal</property>
     <property name="has_separator">False</property>
     <child internal-child="vbox">
-      <object class="GtkVBox" id="dialog-vbox1">
+      <object class="GtkVBox" id="dlvConnectDetails">
         <property name="visible">True</property>
         <property name="orientation">vertical</property>
         <property name="spacing">2</property>
         <child>
-          <object class="GtkHBox" id="hbox4">
+          <object class="GtkHBox" id="hbxConnectDetails">
             <property name="visible">True</property>
             <child>
-              <object class="GtkImage" id="image2">
+              <object class="GtkImage" id="imgConnectDetails">
                 <property name="visible">True</property>
                 <property name="stock">gtk-dialog-question</property>
                 <property name="icon-size">6</property>
@@ -316,14 +403,14 @@
               </packing>
             </child>
             <child>
-              <object class="GtkVBox" id="vbox2">
+              <object class="GtkVBox" id="vbxConnectDetails">
                 <property name="visible">True</property>
                 <property name="orientation">vertical</property>
                 <child>
-                  <object class="GtkHBox" id="hbox1">
+                  <object class="GtkHBox" id="hbxConnectDetailsStoreURI">
                     <property name="visible">True</property>
                     <child>
-                      <object class="GtkLabel" id="label1">
+                      <object class="GtkLabel" id="lblConnectDetailsStoreURI">
                         <property name="visible">True</property>
                         <property name="label" translatable="yes">Store URI: </property>
                       </object>
@@ -334,7 +421,7 @@
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkEntry" id="entry1">
+                      <object class="GtkEntry" id="entConnectDetailsStoreURI">
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="invisible_char">&#x25CF;</property>
@@ -350,10 +437,10 @@
                   </packing>
                 </child>
                 <child>
-                  <object class="GtkHBox" id="hbox2">
+                  <object class="GtkHBox" id="hbxConnectDetailsUsername">
                     <property name="visible">True</property>
                     <child>
-                      <object class="GtkLabel" id="label2">
+                      <object class="GtkLabel" id="lblConnectDetailsUsername">
                         <property name="visible">True</property>
                         <property name="label" translatable="yes">Username: </property>
                       </object>
@@ -364,7 +451,7 @@
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkEntry" id="entry2">
+                      <object class="GtkEntry" id="entConnectDetailsUsername">
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="invisible_char">&#x25CF;</property>
@@ -379,10 +466,10 @@
                   </packing>
                 </child>
                 <child>
-                  <object class="GtkHBox" id="hbox3">
+                  <object class="GtkHBox" id="hbxConnectDetailsPassword">
                     <property name="visible">True</property>
                     <child>
-                      <object class="GtkLabel" id="label3">
+                      <object class="GtkLabel" id="lblConnectDetailsPassword">
                         <property name="visible">True</property>
                         <property name="label" translatable="yes">Password: </property>
                       </object>
@@ -393,7 +480,7 @@
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkEntry" id="entry3">
+                      <object class="GtkEntry" id="entConnectDetailsPassword">
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="visibility">False</property>
@@ -419,11 +506,11 @@
           </packing>
         </child>
         <child internal-child="action_area">
-          <object class="GtkHButtonBox" id="dialog-action_area1">
+          <object class="GtkHButtonBox" id="daaConnectDetails">
             <property name="visible">True</property>
             <property name="layout_style">end</property>
             <child>
-              <object class="GtkButton" id="button1">
+              <object class="GtkButton" id="btnConnectDetailsOK">
                 <property name="label" translatable="yes">gtk-ok</property>
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
@@ -437,7 +524,7 @@
               </packing>
             </child>
             <child>
-              <object class="GtkButton" id="button2">
+              <object class="GtkButton" id="btnConnectDetailsCancel">
                 <property name="label" translatable="yes">gtk-cancel</property>
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
@@ -460,25 +547,25 @@
       </object>
     </child>
     <action-widgets>
-      <action-widget response="1">button1</action-widget>
-      <action-widget response="2">button2</action-widget>
+      <action-widget response="1">btnConnectDetailsOK</action-widget>
+      <action-widget response="2">btnConnectDetailsCancel</action-widget>
     </action-widgets>
   </object>
-  <object class="GtkDialog" id="dialog2">
+  <object class="GtkDialog" id="dlgInfo">
     <property name="border_width">5</property>
     <property name="title" translatable="yes">Information</property>
     <property name="type_hint">normal</property>
     <property name="has_separator">False</property>
     <child internal-child="vbox">
-      <object class="GtkVBox" id="dialog-vbox2">
+      <object class="GtkVBox" id="dlvInfo">
         <property name="visible">True</property>
         <property name="orientation">vertical</property>
         <property name="spacing">2</property>
         <child>
-          <object class="GtkHBox" id="hbox5">
+          <object class="GtkHBox" id="hbxInfo">
             <property name="visible">True</property>
             <child>
-              <object class="GtkImage" id="image4">
+              <object class="GtkImage" id="imgInfo">
                 <property name="visible">True</property>
                 <property name="stock">gtk-dialog-info</property>
                 <property name="icon-size">6</property>
@@ -490,7 +577,7 @@
               </packing>
             </child>
             <child>
-              <object class="GtkLabel" id="label4">
+              <object class="GtkLabel" id="lblInfo">
                 <property name="visible">True</property>
               </object>
               <packing>
@@ -503,11 +590,11 @@
           </packing>
         </child>
         <child internal-child="action_area">
-          <object class="GtkHButtonBox" id="dialog-action_area2">
+          <object class="GtkHButtonBox" id="daaInfo">
             <property name="visible">True</property>
             <property name="layout_style">end</property>
             <child>
-              <object class="GtkButton" id="button3">
+              <object class="GtkButton" id="btnInfo">
                 <property name="label" translatable="yes">gtk-ok</property>
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
@@ -530,24 +617,24 @@
       </object>
     </child>
     <action-widgets>
-      <action-widget response="0">button3</action-widget>
+      <action-widget response="0">btnInfo</action-widget>
     </action-widgets>
   </object>
-  <object class="GtkDialog" id="dialog3">
+  <object class="GtkDialog" id="dlgError">
     <property name="border_width">5</property>
     <property name="title" translatable="yes">Error</property>
     <property name="type_hint">normal</property>
     <property name="has_separator">False</property>
     <child internal-child="vbox">
-      <object class="GtkVBox" id="dialog-vbox3">
+      <object class="GtkVBox" id="dlvError">
         <property name="visible">True</property>
         <property name="orientation">vertical</property>
         <property name="spacing">2</property>
         <child>
-          <object class="GtkHBox" id="hbox6">
+          <object class="GtkHBox" id="hbxError">
             <property name="visible">True</property>
             <child>
-              <object class="GtkImage" id="image5">
+              <object class="GtkImage" id="imgError">
                 <property name="visible">True</property>
                 <property name="stock">gtk-dialog-error</property>
                 <property name="icon-size">6</property>
@@ -559,7 +646,7 @@
               </packing>
             </child>
             <child>
-              <object class="GtkLabel" id="label5">
+              <object class="GtkLabel" id="lblError">
                 <property name="visible">True</property>
               </object>
               <packing>
@@ -572,11 +659,11 @@
           </packing>
         </child>
         <child internal-child="action_area">
-          <object class="GtkHButtonBox" id="dialog-action_area3">
+          <object class="GtkHButtonBox" id="daaError">
             <property name="visible">True</property>
             <property name="layout_style">end</property>
             <child>
-              <object class="GtkButton" id="button4">
+              <object class="GtkButton" id="btnError">
                 <property name="label" translatable="yes">gtk-ok</property>
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
@@ -599,28 +686,26 @@
       </object>
     </child>
     <action-widgets>
-      <action-widget response="0">button4</action-widget>
+      <action-widget response="0">btnError</action-widget>
     </action-widgets>
   </object>
-  <object class="GtkImage" id="image1">
+  <object class="GtkImage" id="imgConnect">
     <property name="visible">True</property>
     <property name="stock">gtk-connect</property>
   </object>
-  <object class="GtkImage" id="image3">
+  <object class="GtkImage" id="imgStatus">
     <property name="visible">True</property>
     <property name="stock">gtk-properties</property>
   </object>
-  <object class="GtkTextBuffer" id="textbuffer1"/>
-  <object class="GtkImage" id="image2">
-    <property name="visible">True</property>
-    <property name="stock">gtk-find</property>
+  <object class="GtkTextBuffer" id="txbSparqlSelectEditor">
+    <property name="text" translatable="yes">SELECT 
+WHERE {
+	
+}
+</property>
   </object>
-  <object class="GtkImage" id="image4">
+  <object class="GtkImage" id="imgExecute">
     <property name="visible">True</property>
     <property name="stock">gtk-execute</property>
-  </object>
-  <object class="GtkImage" id="image5">
-    <property name="visible">True</property>
-    <property name="stock">gtk-close</property>
   </object>
 </interface>

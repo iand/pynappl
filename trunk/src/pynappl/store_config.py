@@ -124,7 +124,7 @@ class FieldPredicateMap(ResourceDescription):
 	
 	def add_mapping(self, property, name, analyzer = None):
 		self.remove_mapping(property)
-		norm_name = re.sub('[^a-zA-Z]', '', name).strip().lower()
+		norm_name = re.sub('[^a-zA-Z0-9]', '', name).strip().lower()
 		mapping_uri = "%s#%s" % (self.uri, norm_name)
 		self.g.add( (rdflib.URIRef(self.uri), FRAME["mappedDatatypeProperty"], rdflib.URIRef(mapping_uri) ) )
 		self.g.add( (rdflib.URIRef(mapping_uri), FRAME["property"], rdflib.URIRef(property) ) )

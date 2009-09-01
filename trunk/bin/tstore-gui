@@ -1,19 +1,19 @@
 #!/usr/bin/python
 import pygtk, sys
 pygtk.require("2.0")
-import gtk, pynappl
+import gtk, pynappl, os, sys, rdflib, httplib2
 class main:
 	def msg(self, msg, iserror=False):
 		if iserror:
-			dialog = self.builder.get_object("dialog3")
-			label = self.builder.get_object("label5")
+			dialog = self.builder.get_object("dlgError")
+			label = self.builder.get_object("lblError")
 			label.set_text(msg)
 			dialog.show_all()
 			dialog.run()
 			dialog.hide_all()
 		else:
-			dialog = self.builder.get_object("dialog2")
-			label = self.builder.get_object("label4")
+			dialog = self.builder.get_object("dlgInfo")
+			label = self.builder.get_object("lblInfo")
 			label.set_text(msg)
 			dialog.show_all()
 			dialog.run()
@@ -24,36 +24,69 @@ class main:
 		self.password = None
 		self.store = None
 		self.builder = gtk.Builder()
-		self.builder.add_from_file("tstore-gui-ui.glade")
+		self.builder.add_from_file(os.path.join(os.path.dirname(os.path.realpath(os.path.abspath(sys.argv[0]))), "tstore-gui-ui.glade"))
 		self.builder.connect_signals({
-			"on_imagemenuitem1_activate" : self.connect,
-			"on_imagemenuitem2_activate" : self.status,
-			"on_imagemenuitem3_activate" : self.select,
-			"on_menuitem2_activate" : gtk.main_quit,
-			"on_toolbutton1_clicked" : self.connect,
-			"on_toolbutton2_clicked" : gtk.main_quit,
-			"on_toolbutton3_clicked" : self.status,
-			"on_toolbutton4_clicked" : self.select,
-			"on_toolbutton5_clicked" : self.select_exec,
-			"on_toolbutton6_clicked" : self.select_close,
-			"on_window1_destroy" : gtk.main_quit,
+			"on_btnSparqlSelectExecute_clicked" : self.select,
+			"on_mniStoreConnect_activate" : self.connect,
+			"on_mniActionStatus_activate" : self.status,
+			"on_mniQuit_activate" : gtk.main_quit,
+			"on_tbnConnect_clicked" : self.connect,
+			"on_tbnQuit_clicked" : gtk.main_quit,
+			"on_tbnStatus_clicked" : self.status,
+			"on_trvStoreList_row_activated" : self.open_store,
+			"on_winMain_destroy" : gtk.main_quit,
+			"on_btnStoreListRefresh_clicked" : self.list_stores,
 		}, None)
 		self.objects = self.builder.get_objects() # keep a reference to all objects, otherwise segfault occurs
-		self.sb = self.builder.get_object("statusbar1")
+		self.sb = self.builder.get_object("sbrMain")
+		self.sb = self.builder.get_object("sbrMain")
 		self.cid_current_store = self.sb.get_context_id("current store")
 		self.cid_current_action = self.sb.get_context_id("current action")
 		self.sb.push(self.cid_current_store, "Not connected to a store")
-		self.select_table = self.builder.get_object("table1")
-		window = self.builder.get_object("window1")
+		self.select_table = self.builder.get_object("tblSparqlSelectResults")
+		evb = self.builder.get_object("evbSparqlSelectResults")
+		for n in range(5):
+			evb.modify_bg(n, gtk.gdk.Color(65535, 65535, 65535))
+		window = self.builder.get_object("winMain")
 		window.maximize()
 		window.show_all()
-		self.select_close()
+		self.list_stores()
 		gtk.main()
+	def list_stores(self, *gtkargs):
+		ts = self.builder.get_object("trsStoreList")
+		ts.clear()
+		h = httplib2.Http()
+		self.sb.push(self.cid_current_action, "Getting store list")
+		resp, body = h.request("http://api.talis.com/stores", "GET", None, {"Accept": "application/rdf+xml"})
+		self.sb.pop(self.cid_current_action)
+		if resp.status not in range(200, 300):
+			self.error("Could not list stores: (HTTP error %d)" % resp.status, True)
+		g = rdflib.ConjunctiveGraph()
+		g.parse(rdflib.StringInputSource(body))
+		stores = g.objects(rdflib.URIRef("http://api.talis.com/stores"), rdflib.URIRef("http://schemas.talis.com/2006/bigfoot/configuration#store"))
+		for store_uri in sorted(stores):
+			store_name = store_uri[28:]
+			label = store_name.replace("-", " ").capitalize()
+			ts.append(None, [label, store_name])
+	def open_store(self, *gtkargs):
+		tv = self.builder.get_object("trvStoreList")
+		ts = self.builder.get_object("trsStoreList")
+		path, col = tv.get_cursor()
+		row = ts[path]
+		name = row[1]
+		self.store_uri = "http://api.talis.com/stores/" + name
+		self.username = None
+		self.password = None
+		self.store = pynappl.Store(self.store_uri, self.username, self.password)
+		self.sb.pop(self.cid_current_store)
+		self.sb.push(self.cid_current_store, "Current store: %s" % self.store_uri)
+		self.builder.get_object("tbnStatus").set_sensitive(True)
+		self.builder.get_object("mniActionStatus").set_sensitive(True)
 	def connect(self, *gtkargs):
-		dialog = self.builder.get_object("dialog1")
-		entry1 = self.builder.get_object("entry1")
-		entry2 = self.builder.get_object("entry2")
-		entry3 = self.builder.get_object("entry3")
+		dialog = self.builder.get_object("dlgConnectDetails")
+		entry1 = self.builder.get_object("entConnectDetailsStoreURI")
+		entry2 = self.builder.get_object("entConnectDetailsUsername")
+		entry3 = self.builder.get_object("entConnectDetailsPassword")
 		dialog.show_all()
 		resp = dialog.run()
 		dialog.hide_all()
@@ -61,16 +94,17 @@ class main:
 			self.store_uri = entry1.get_text()
 			self.username = entry2.get_text()
 			self.password = entry3.get_text()
+			#self.store_uri = "http://api.talis.com/stores/iand"
+			#self.username = "iand"
+			#self.password = "m064w058"
 			self.store = pynappl.Store(self.store_uri, self.username, self.password)
 			self.sb.pop(self.cid_current_store)
 			self.sb.push(self.cid_current_store, "Current store: %s" % self.store_uri)
+			self.builder.get_object("tbnStatus").set_sensitive(True)
+			self.builder.get_object("mniActionStatus").set_sensitive(True)
 		entry1.set_text("http://api.talis.com/stores/")
 		entry2.set_text("")
 		entry3.set_text("")
-		self.builder.get_object("toolbutton3").set_sensitive(True)
-		self.builder.get_object("toolbutton4").set_sensitive(True)
-		self.builder.get_object("imagemenuitem2").set_sensitive(True)
-		self.builder.get_object("imagemenuitem3").set_sensitive(True)
 	def status(self, *gtkargs):
 		self.sb.push(self.cid_current_action, "Getting status of store '%s'" % self.store_uri)
 		response, status = self.store.status()
@@ -80,27 +114,20 @@ class main:
 		else:
 			self.msg(status.capitalize(), False)
 	def select(self, *gtkargs):
-		self.builder.get_object("vpaned1").show_all()
-		self.builder.get_object("toolbutton5").show_all()
-		self.builder.get_object("toolbutton6").show_all()
-		self.builder.get_object("separatortoolitem3").show_all()
-		self.builder.get_object("menuitem4").show_all()
-	def select_exec(self, *gtkargs):
-		buffer = self.builder.get_object("textbuffer1")
+		buffer = self.builder.get_object("txbSparqlSelectEditor")
 		query = buffer.get_text(buffer.get_start_iter(), buffer.get_end_iter())
 		self.sb.push(self.cid_current_action, "Querying store '%s'" % self.store_uri)
 		response, result = self.store.select(query)
 		self.sb.pop(self.cid_current_action)
 		if response.status not in range(200, 300):
-			self.msg("Could not fetch status (HTTP error %d)" % response.status, True)
+			self.msg("Could not execute query (HTTP error %d)" % response.status, True)
 		else:
 			headers, results = result
-			print headers, results
 			self.select_table.destroy()
 			self.select_table = gtk.Table(len(results) + 1, len(headers))
 			i = 0
 			for header in headers:
-				self.select_table.attach(gtk.Label(header), i, i + 1, 0, 1)
+				self.select_table.attach(gtk.Label(header), i, i + 1, 0, 1, 0, 0, 5)
 				i += 1
 			i = 1
 			for d in results:
@@ -109,16 +136,10 @@ class main:
 				for header in headers:
 					vals.append(d[header])
 				for v in vals:
-					self.select_table.attach(gtk.Label(v), j, j + 1, i, i + 1)
+					self.select_table.attach(gtk.Label(v), j, j + 1, i, i + 1, 0, 0, 5)
 					j += 1
 				i += 1
-			self.builder.get_object("vpaned1").add2(self.select_table)
+			self.builder.get_object("evbSparqlSelectResults").add(self.select_table)
 			self.select_table.show_all()
-	def select_close(self, *gtkargs):
-		self.builder.get_object("vpaned1").hide_all()
-		self.builder.get_object("toolbutton5").hide_all()
-		self.builder.get_object("toolbutton6").hide_all()
-		self.builder.get_object("separatortoolitem3").hide_all()
-		self.builder.get_object("menuitem4").hide_all()
 if __name__ == "__main__":
 	main()
