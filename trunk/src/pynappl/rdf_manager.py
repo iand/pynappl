@@ -24,4 +24,8 @@ class RDFManager(pynappl.FileManager):
     self.store = store
     
   def process_file(self, filename):
-    self.store.store_file(filename)
+    (response, body) = self.store.store_file(filename)
+    if response.status in range(200, 300):
+      return ''
+    else:
+      return body

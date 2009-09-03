@@ -19,6 +19,7 @@ __all__ = ["FileManager", "file_manager_main"]
 import pynappl
 import os
 import re
+import sys
 
 class FileManager():
   def __init__(self, directory_name, recursive = False, filename_filter = None, ok_suffix='ok', fail_suffix='fail', callback=None):
@@ -32,15 +33,22 @@ class FileManager():
       self.filename_filter = None
     self.callback = callback
     
-  def process(self):
+  def process(self, verbose = False):
     """Process all files in directory"""
     for filename in self.list_new():
+      if verbose:
+        print "Processing %s......" % filename,
+        sys.stdout.flush()
       res = self.process_file(filename)
       if res:
+        if verbose:
+          print "FAIL"
         f = open(self.fail_filename(filename), "w")
         f.write(res)
         f.close()
       else:
+        if verbose:
+          print "OK"
         f = open(self.ok_filename(filename), "w")
         f.write("OK")
         f.close()
@@ -131,9 +139,23 @@ class FileManager():
     
   def retry_failures(self):
     """Process all files marked as failure in directory"""
-    for filename in self.list_failures():
+    for filename in self.list_failures(verbose = False):
       os.remove(self.fail_filename(filename))
-      self.process_file(filename)
+      if verbose:
+        print "Processing %s......" % filename,
+      res = self.process_file(filename, verbose)
+      if res:
+        if verbose:
+          print "FAIL"
+        f = open(self.fail_filename(filename), "w")
+        f.write(res)
+        f.close()
+      else:
+        if verbose:
+          print "OK"
+        f = open(self.ok_filename(filename), "w")
+        f.write("OK")
+        f.close()
 
 class PrintingFileManager(FileManager):
   def process_file(self, filename):

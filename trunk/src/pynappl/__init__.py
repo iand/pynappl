@@ -1,7 +1,7 @@
 __version__ = '0.1.0'
 
 class PynapplError(Exception):
-	pass
+  pass
 
 from constants import *
 from store import *
@@ -10,3 +10,4 @@ from sparql_client import *
 from file_manager import *
 from rdf_manager import *
 from store_config import *
+from batch_graph import *

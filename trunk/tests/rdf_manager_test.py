@@ -18,7 +18,7 @@ import unittest
 import pynappl
 import os, os.path
 from file_manager_test import FileManagerTestCase
-
+import httplib2
 
 class RecordingStore(pynappl.Store):
   """An instrumented version of Store that records calls to  store_file"""
@@ -29,11 +29,24 @@ class RecordingStore(pynappl.Store):
   
   def store_file(self, filename):
     self.files_processed.append(filename)
+    response = httplib2.Response({})
+    return (response, "")
 
+class FailingStore(pynappl.Store):
+  """An instrumented version of Store that fails calls to  store_file"""
+  
+  def __init__(self):
+    pynappl.Store.__init__(self, 'http://example.com/recordingstore')
+    self.files_processed = []
+  
+  def store_file(self, filename):
+    response = httplib2.Response({})
+    response.status = 400
+    return (response, "FAIL")
 
 class ProcessFileTestCase(FileManagerTestCase):
   
-  def test_list_non_recursive_empty_dir(self):
+  def test_process_non_recursive_empty_dir(self):
     self.add_file('foo')
     self.add_file('bar')
 
@@ -45,4 +58,10 @@ class ProcessFileTestCase(FileManagerTestCase):
     self.assertTrue( os.path.join(self.dirname, 'foo') in store.files_processed )
     self.assertTrue( os.path.join(self.dirname, 'bar') in store.files_processed )
 
+  def test_process_file_returns_failure_messages(self):
+    store = FailingStore()
+    m = pynappl.RDFManager(store, self.dirname, False)
+    ret = m.process_file("foo")
+
+    self.assertEqual( "FAIL", ret )
 
