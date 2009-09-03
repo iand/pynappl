@@ -269,7 +269,7 @@ class Store:
 		def write_fpmap(self, fpmap):
 			config = self.get_config()
 			fpmap_uri = config.get_first_fpmap_uri()
-			return self.client.request(fpmap_uri, "POST", body=fpmap.to_rdfxml(), headers={"accept" : "*/*", 'content-type':'application/rdf+xml'})
+			return self.client.request(fpmap_uri, "PUT", body=fpmap.to_rdfxml(), headers={"accept" : "*/*", 'content-type':'application/rdf+xml'})
 				
 		def read_query_profile(self, raw=False):
 			"""Retrieve the field/predicate map (the first one if there are multiple)"""
@@ -287,4 +287,4 @@ class Store:
 		def write_query_profile(self, qprofile):
 			config = self.get_config()
 			qprofile_uri = config.get_first_query_profile_uri()
-			return self.client.request(qprofile_uri, "POST", body=qprofile.to_rdfxml(), headers={"accept" : "*/*", 'content-type':'application/rdf+xml'})
+			return self.client.request(qprofile_uri, "PUT", body=qprofile.to_rdfxml(), headers={"accept" : "*/*", 'content-type':'application/rdf+xml'})

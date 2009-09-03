@@ -723,7 +723,7 @@ class FpmapTestCase(unittest.TestCase):
 		fpmap = pynappl.FieldPredicateMap('http://example.com/store/config/fpmaps/1')
 		fpmap.from_rdfxml(FPMAP_DATA)
 		resp = store.write_fpmap(fpmap)
-		(header, body) = client.get_request('post', 'http://example.com/store/config/fpmaps/1')
+		(header, body) = client.get_request('put', 'http://example.com/store/config/fpmaps/1')
 		return (client, header, body)
 
 	def test_read_fpmap_performs_get_on_fpmap_uri(self):
@@ -743,7 +743,7 @@ class FpmapTestCase(unittest.TestCase):
 		
 	def test_write_fpmap_posts_to_fpmap_uri(self):
 		(client, headers, body) = self.submit_fpmap()
-		self.assertTrue(client.received_request('post', 'http://example.com/store/config/fpmaps/1'))
+		self.assertTrue(client.received_request('put', 'http://example.com/store/config/fpmaps/1'))
 
 	def test_write_fpmap_sets_content_type(self):
 		(client, headers, body) = self.submit_fpmap()
@@ -772,7 +772,7 @@ class QueryProfileTestCase(unittest.TestCase):
 		qprofile = pynappl.QueryProfile('http://example.com/store/config/queryprofiles/1')
 		qprofile.from_rdfxml(QPROFILE_DATA)
 		resp = store.write_query_profile(qprofile)
-		(header, body) = client.get_request('post', 'http://example.com/store/config/queryprofiles/1')
+		(header, body) = client.get_request('put', 'http://example.com/store/config/queryprofiles/1')
 		return (client, header, body)
 
 	def test_read_query_profile_performs_get_on_fpmap_uri(self):
@@ -791,7 +791,7 @@ class QueryProfileTestCase(unittest.TestCase):
 
 	def test_write_query_profile_posts_to_fpmap_uri(self):
 		(client, headers, body) = self.submit_qprofile()
-		self.assertTrue(client.received_request('post', 'http://example.com/store/config/queryprofiles/1'))
+		self.assertTrue(client.received_request('put', 'http://example.com/store/config/queryprofiles/1'))
 
 	def test_write_query_profile_sets_content_type(self):
 		(client, headers, body) = self.submit_qprofile()

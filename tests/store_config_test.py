@@ -442,6 +442,7 @@ class FPMapTestCase(unittest.TestCase):
 		mapping_uri2 = fpmap.add_mapping("http://example.com/pred2", "pred2")
 
 		mappings = fpmap.mappings()
+		
 		self.assertEqual("pred", mappings["http://example.com/pred"]['name'])
 		self.assertEqual("pred2", mappings["http://example.com/pred2"]['name'])
 
