@@ -1,4 +1,4 @@
-import rdflib
+from rdflib.graph import Graph
 
 class BatchGraph:
   def __len__(self):
@@ -15,7 +15,7 @@ class BatchGraph:
     self.reset()
     
   def reset(self):
-    self.g = rdflib.ConjunctiveGraph()
+    self.g = Graph()
     self.triple_count = 0
     for prefix, ns in self.bindings.items():
       self.g.bind(prefix, ns)
@@ -36,6 +36,8 @@ class BatchGraph:
     g_file = open("%s%s.%s" % (self.file_prefix, self.current_batch, self.format), "w")
     if self.format == "nt":
       format_name = "ntriples"
+    elif self.format == "ttl":
+      format_name = "turtle"
     else:
       format_name = "pretty-xml"
       
