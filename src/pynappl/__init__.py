@@ -11,3 +11,4 @@ from file_manager import *
 from rdf_manager import *
 from store_config import *
 from batch_graph import *
+from entitymatcher import *

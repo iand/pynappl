@@ -21,6 +21,7 @@ import job_test
 import file_manager_test
 import rdf_manager_test
 import store_config_test
+import entitymatcher_test
 
 
 def suite():
@@ -63,6 +64,8 @@ def suite():
                             , unittest.TestLoader().loadTestsFromTestCase(store_config_test.StoreConfigTestCase)
                             , unittest.TestLoader().loadTestsFromTestCase(store_config_test.FPMapTestCase)
                             , unittest.TestLoader().loadTestsFromTestCase(store_config_test.QueryProfileTestCase)
+                            
+                            , unittest.TestLoader().loadTestsFromTestCase(entitymatcher_test.EntityMatcherTestCase)
                             ])
 
 

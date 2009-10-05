@@ -6,6 +6,7 @@ help:
 	@echo "  compile      compile all source files"
 	@echo "  test         run all tests"
 	@echo "  clean        clean all compiled files"
+	@echo "  dist         create source distributions"
 
 all: clean compile test 
 
