@@ -1,0 +1,12 @@
+<rdf:RDF
+	xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+	xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#"
+	xmlns:types="http://example.com/entitymatcher/types/"
+>
+	<types:Continent rdf:about="http://sws.geonames.org/6255146/">
+		<rdfs:label>Africa</rdfs:label>
+	</types:Continent>
+	<types:Continent rdf:about="http://sws.geonames.org/6255147/">
+		<rdfs:label>Asia</rdfs:label>
+	</types:Continent>
+</rdf:RDF>

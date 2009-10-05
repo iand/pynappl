@@ -16,10 +16,11 @@
 
 __all__ = ["StoreConfig", "FieldPredicateMap", "QueryProfile"]
 import re
-from rdflib.namespace import Namespace
+import StringIO
+import rdflib.namespace, rdflib.graph, rdflib.term
 
-FRAME = Namespace("http://schemas.talis.com/2006/frame/schema#")
-BF = Namespace("http://schemas.talis.com/2006/bigfoot/configuration#")
+FRAME = rdflib.namespace.Namespace("http://schemas.talis.com/2006/frame/schema#")
+BF = rdflib.namespace.Namespace("http://schemas.talis.com/2006/bigfoot/configuration#")
 
 
 
@@ -105,7 +106,7 @@ class ResourceDescription():
     self.init_graph()
 
   def init_graph(self):
-    self.g = rdflib.ConjunctiveGraph()
+    self.g = rdflib.graph.Graph()
     self.g.bind('frm', FRAME)
     self.g.bind('bf', BF)
 
@@ -114,7 +115,7 @@ class ResourceDescription():
     
   def from_rdfxml(self, data):
     self.init_graph()
-    self.g.parse(rdflib.StringInputSource(data), format="xml")
+    self.g.parse(StringIO.StringIO(data), format="xml")
 
   def to_rdfxml(self):
     return self.g.serialize(format='xml')
@@ -126,24 +127,24 @@ class FieldPredicateMap(ResourceDescription):
     self.remove_mapping(property)
     norm_name = re.sub('[^a-zA-Z0-9]', '', name).strip().lower()
     mapping_uri = "%s#%s" % (self.uri, norm_name)
-    self.g.add( (rdflib.URIRef(self.uri), FRAME["mappedDatatypeProperty"], rdflib.URIRef(mapping_uri) ) )
-    self.g.add( (rdflib.URIRef(mapping_uri), FRAME["property"], rdflib.URIRef(property) ) )
-    self.g.add( (rdflib.URIRef(mapping_uri), FRAME["name"], rdflib.Literal(norm_name) ) )
+    self.g.add( (rdflib.term.URIRef(self.uri), FRAME["mappedDatatypeProperty"], rdflib.term.URIRef(mapping_uri) ) )
+    self.g.add( (rdflib.term.URIRef(mapping_uri), FRAME["property"], rdflib.term.URIRef(property) ) )
+    self.g.add( (rdflib.term.URIRef(mapping_uri), FRAME["name"], rdflib.term.Literal(norm_name) ) )
     if analyzer is not None:
-      self.g.add( (rdflib.URIRef(mapping_uri), BF["analyzer"], rdflib.URIRef(analyzer) ) )
+      self.g.add( (rdflib.term.URIRef(mapping_uri), BF["analyzer"], rdflib.term.URIRef(analyzer) ) )
     
     return mapping_uri
     
     
   def remove_mapping(self, property):
-    for (s, p, o) in self.g.triples( (None, FRAME["property"], rdflib.URIRef(property)) ):
+    for (s, p, o) in self.g.triples( (None, FRAME["property"], rdflib.term.URIRef(property)) ):
       self.g.remove( (None, None, s) )
       self.g.remove( (s, None, None) )
       return
   
   def mappings(self):
     mapping_list = {}
-    for (s, p, o) in self.g.triples( (rdflib.URIRef(self.uri), FRAME["mappedDatatypeProperty"], None) ):
+    for (s, p, o) in self.g.triples( (rdflib.term.URIRef(self.uri), FRAME["mappedDatatypeProperty"], None) ):
       names = list(self.g.objects( subject = o, predicate = FRAME["name"] ) ) 
       properties = list(self.g.objects( subject = o, predicate = FRAME["property"] ) ) 
       
@@ -156,20 +157,20 @@ class QueryProfile(ResourceDescription):
   def add_field_weight(self, name, weight):
     self.remove_field_weight(name)
     weight_uri = "%s#%s" % (self.uri, name)
-    self.g.add( (rdflib.URIRef(self.uri), BF["fieldWeight"], rdflib.URIRef(weight_uri) ) )
-    self.g.add( (rdflib.URIRef(weight_uri), BF["weight"], rdflib.Literal(weight) ) )
-    self.g.add( (rdflib.URIRef(weight_uri), FRAME["name"], rdflib.Literal(name) ) )
+    self.g.add( (rdflib.term.URIRef(self.uri), BF["fieldWeight"], rdflib.term.URIRef(weight_uri) ) )
+    self.g.add( (rdflib.term.URIRef(weight_uri), BF["weight"], rdflib.term.Literal(weight) ) )
+    self.g.add( (rdflib.term.URIRef(weight_uri), FRAME["name"], rdflib.term.Literal(name) ) )
     return weight_uri
 
   def remove_field_weight(self, name):
-    for (s, p, o) in self.g.triples( (None, FRAME["name"], rdflib.Literal(name)) ):
+    for (s, p, o) in self.g.triples( (None, FRAME["name"], rdflib.term.Literal(name)) ):
       self.g.remove( (None, None, s) )
       self.g.remove( (s, None, None) )
       return
 
   def weights(self):
     weight_list = {}
-    for (s, p, o) in self.g.triples( (rdflib.URIRef(self.uri), BF["fieldWeight"], None) ):
+    for (s, p, o) in self.g.triples( (rdflib.term.URIRef(self.uri), BF["fieldWeight"], None) ):
       names = list(self.g.objects( subject = o, predicate = FRAME["name"] ) ) 
       weights = list(self.g.objects( subject = o, predicate = BF["weight"] ) ) 
       

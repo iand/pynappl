@@ -18,7 +18,7 @@ import unittest
 import pynappl
 import urllib
 import httplib2
-import rdflib
+import rdflib.term, rdflib.graph
 import datetime as dt
 import tempfile
 import os, os.path
@@ -83,7 +83,7 @@ class ScheduleJobTestCase(unittest.TestCase):
 		return (client, header, body)
 		
 	def parse_job_request(self, body):
-		g = rdflib.ConjunctiveGraph()
+		g = rdflib.graph.ConjunctiveGraph()
 		g.parse(StringIO(body), format="xml")
 		return g
 
@@ -120,17 +120,17 @@ class ScheduleJobTestCase(unittest.TestCase):
 
 	def test_schedule_job_posts_rdfxml_with_a_single_jobtype(self):
 		g = self.post_job_and_get_graph()
-		objects = list(g.objects(subject = None, predicate = rdflib.URIRef('http://schemas.talis.com/2006/bigfoot/configuration#jobType')))
+		objects = list(g.objects(subject = None, predicate = rdflib.term.URIRef('http://schemas.talis.com/2006/bigfoot/configuration#jobType')))
 		self.assertEqual(1, len(objects))
 
 	def test_schedule_job_rdfxml_with_a_single_start_time(self):
 		g = self.post_job_and_get_graph()
-		objects = list(g.objects(subject = None, predicate = rdflib.URIRef('http://schemas.talis.com/2006/bigfoot/configuration#startTime')))
+		objects = list(g.objects(subject = None, predicate = rdflib.term.URIRef('http://schemas.talis.com/2006/bigfoot/configuration#startTime')))
 		self.assertEqual(1, len(objects))
 
 	def test_schedule_job_rdfxml_with_a_type_of_job_request(self):
 		g = self.post_job_and_get_graph()
-		objects = list(g.objects(subject = None, predicate = rdflib.URIRef('http://www.w3.org/1999/02/22-rdf-syntax-ns#type')))
+		objects = list(g.objects(subject = None, predicate = rdflib.term.URIRef('http://www.w3.org/1999/02/22-rdf-syntax-ns#type')))
 		self.assertEqual(1, len(objects))
 		self.assertEqual('http://schemas.talis.com/2006/bigfoot/configuration#JobRequest', str(objects[0]))
 
@@ -143,7 +143,7 @@ class ScheduleJobTestCase(unittest.TestCase):
 
 		g = self.parse_job_request(body)
 		
-		objects = list(g.objects(subject = None, predicate = rdflib.URIRef('http://www.w3.org/2000/01/rdf-schema#label')))
+		objects = list(g.objects(subject = None, predicate = rdflib.term.URIRef('http://www.w3.org/2000/01/rdf-schema#label')))
 		self.assertEqual(1, len(objects))
 		self.assertEqual('My job', str(objects[0]))
 
@@ -155,7 +155,7 @@ class ScheduleJobTestCase(unittest.TestCase):
 
 		g = self.parse_job_request(body)
 		
-		objects = list(g.objects(subject = None, predicate = rdflib.URIRef('http://schemas.talis.com/2006/bigfoot/configuration#startTime')))
+		objects = list(g.objects(subject = None, predicate = rdflib.term.URIRef('http://schemas.talis.com/2006/bigfoot/configuration#startTime')))
 		self.assertEqual(1, len(objects))
 		self.assertEqual('2008-07-06T05:04:03Z', str(objects[0]))
 
@@ -167,9 +167,9 @@ class ScheduleResetTestCase(ScheduleJobTestCase):
 
 	def test_schedule_reset_data_posts_rdfxml_with_a_job_type_of_reset_data_job(self):
 		g = self.post_job_and_get_graph()
-		objects = list(g.objects(subject = None, predicate = rdflib.URIRef('http://schemas.talis.com/2006/bigfoot/configuration#jobType')))
+		objects = list(g.objects(subject = None, predicate = rdflib.term.URIRef('http://schemas.talis.com/2006/bigfoot/configuration#jobType')))
 		self.assertEqual(1, len(objects))
-		self.assertEqual('http://schemas.talis.com/2006/bigfoot/configuration#ResetDataJob', str(objects[0]))
+		self.assertEqual(pynappl.JOB_TYPE_RESET, str(objects[0]))
 
 class ScheduleSnapshotTestCase(ScheduleJobTestCase):
 	def do_schedule(self, store, time=None, label=None):
@@ -177,9 +177,9 @@ class ScheduleSnapshotTestCase(ScheduleJobTestCase):
 
 	def test_schedule_reset_data_posts_rdfxml_with_a_job_type_of_snapshot_job(self):
 		g = self.post_job_and_get_graph()
-		objects = list(g.objects(subject = None, predicate = rdflib.URIRef('http://schemas.talis.com/2006/bigfoot/configuration#jobType')))
+		objects = list(g.objects(subject = None, predicate = rdflib.term.URIRef('http://schemas.talis.com/2006/bigfoot/configuration#jobType')))
 		self.assertEqual(1, len(objects))
-		self.assertEqual('http://schemas.talis.com/2006/bigfoot/configuration#SnapshotJob', str(objects[0]))
+		self.assertEqual(pynappl.JOB_TYPE_SNAPSHOT, str(objects[0]))
 
 
 class ScheduleReindexTestCase(ScheduleJobTestCase):
@@ -188,9 +188,9 @@ class ScheduleReindexTestCase(ScheduleJobTestCase):
 
 	def test_schedule_reindex_posts_rdfxml_with_a_job_type_of_snapshot_job(self):
 		g = self.post_job_and_get_graph()
-		objects = list(g.objects(subject = None, predicate = rdflib.URIRef('http://schemas.talis.com/2006/bigfoot/configuration#jobType')))
+		objects = list(g.objects(subject = None, predicate = rdflib.term.URIRef('http://schemas.talis.com/2006/bigfoot/configuration#jobType')))
 		self.assertEqual(1, len(objects))
-		self.assertEqual('http://schemas.talis.com/2006/bigfoot/configuration#ReindexJob', str(objects[0]))
+		self.assertEqual(pynappl.JOB_TYPE_REINDEX, str(objects[0]))
 
 class ScheduleRestoreTestCase(ScheduleJobTestCase):
 	def do_schedule(self, store, time=None, label=None):
@@ -198,13 +198,13 @@ class ScheduleRestoreTestCase(ScheduleJobTestCase):
 
 	def test_schedule_reindex_posts_rdfxml_with_a_job_type_of_snapshot_job(self):
 		g = self.post_job_and_get_graph()
-		objects = list(g.objects(subject = None, predicate = rdflib.URIRef('http://schemas.talis.com/2006/bigfoot/configuration#jobType')))
+		objects = list(g.objects(subject = None, predicate = rdflib.term.URIRef('http://schemas.talis.com/2006/bigfoot/configuration#jobType')))
 		self.assertEqual(1, len(objects))
-		self.assertEqual('http://schemas.talis.com/2006/bigfoot/configuration#RestoreJob', str(objects[0]))
+		self.assertEqual(pynappl.JOB_TYPE_RESTORE, str(objects[0]))
 
 	def test_schedule_reindex_posts_rdfxml_with_supplied_snapshot_uri(self):
 		g = self.post_job_and_get_graph()
-		objects = list(g.objects(subject = None, predicate = rdflib.URIRef('http://schemas.talis.com/2006/bigfoot/configuration#snapshotUri')))
+		objects = list(g.objects(subject = None, predicate = rdflib.term.URIRef('http://schemas.talis.com/2006/bigfoot/configuration#snapshotUri')))
 		self.assertEqual(1, len(objects))
 		self.assertEqual('http://example.com/snapshot', str(objects[0]))
 
@@ -352,11 +352,11 @@ class StoreFileTestCase(unittest.TestCase):
 
 class StoreGraphTestCase(unittest.TestCase):
 	def setUp(self):
-		self.graph = rdflib.ConjunctiveGraph()
+		self.graph = rdflib.graph.ConjunctiveGraph()
 		self.graph.parse(StringIO(SINGLE_TRIPLE), format="xml")
 	
 	def is_isomorphic(self, data):
-		g = rdflib.ConjunctiveGraph()
+		g = rdflib.graph.ConjunctiveGraph()
 		g.parse(StringIO(data), format="xml")
 		return self.graph.isomorphic(g)
 	
@@ -431,11 +431,11 @@ class StoreUrlTestCase(unittest.TestCase):
 		self.client = MockHttp()
 		self.client.register('get', self.remote_url, SINGLE_TRIPLE)
 		self.store = pynappl.Store('http://example.com/store', client=self.client)
-		self.graph = rdflib.ConjunctiveGraph()
+		self.graph = rdflib.graph.Graph()
 		self.graph.parse(StringIO(SINGLE_TRIPLE), format="xml")
 	
 	def is_isomorphic(self, data):
-		g = rdflib.ConjunctiveGraph()
+		g = rdflib.graph.ConjunctiveGraph()
 		g.parse(StringIO(data), format="xml")
 		return self.graph.isomorphic(g)
 	
@@ -636,12 +636,12 @@ class SparqlTestCase(unittest.TestCase):
 		self.assertEqual(2, len(results))
 		
 		self.assertEqual(["s", "o"], results[0].keys())
-		self.assertEqual(rdflib.URIRef("http://oecd.dataincubator.org/"), results[0]["s"])
-		self.assertEqual(rdflib.URIRef("http://rdfs.org/ns/void#Dataset"), results[0]["o"])
+		self.assertEqual(rdflib.term.URIRef("http://oecd.dataincubator.org/"), results[0]["s"])
+		self.assertEqual(rdflib.term.URIRef("http://rdfs.org/ns/void#Dataset"), results[0]["o"])
 		
 		self.assertEqual(["s", "o"], results[1].keys())
-		self.assertEqual(rdflib.URIRef("http://oecd.dataincubator.org/glossary/segments/economic-outlook"), results[1]["s"])
-		self.assertEqual(rdflib.URIRef("http://www.w3.org/2004/02/skos/core#Collection"), results[1]["o"])
+		self.assertEqual(rdflib.term.URIRef("http://oecd.dataincubator.org/glossary/segments/economic-outlook"), results[1]["s"])
+		self.assertEqual(rdflib.term.URIRef("http://www.w3.org/2004/02/skos/core#Collection"), results[1]["o"])
 
 
 class SearchTestCase(unittest.TestCase):

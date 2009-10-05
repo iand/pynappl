@@ -137,13 +137,13 @@ class FileManager():
           os.remove(full_filename)
     
     
-  def retry_failures(self):
+  def retry_failures(self, verbose=False):
     """Process all files marked as failure in directory"""
-    for filename in self.list_failures(verbose = False):
+    for filename in self.list_failures():
       os.remove(self.fail_filename(filename))
       if verbose:
         print "Processing %s......" % filename,
-      res = self.process_file(filename, verbose)
+      res = self.process_file(filename)
       if res:
         if verbose:
           print "FAIL"
