@@ -15,6 +15,8 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
 
+import sys; sys.path.insert(0, "/home/kier/newrdflib")
+
 import unittest
 import store_test
 import job_test
@@ -22,7 +24,6 @@ import file_manager_test
 import rdf_manager_test
 import store_config_test
 import entitymatcher_test
-
 
 def suite():
   return unittest.TestSuite([

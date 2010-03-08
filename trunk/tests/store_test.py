@@ -515,6 +515,11 @@ class AuthenticationTestCase(unittest.TestCase):
 
 
 class UriTestCase(unittest.TestCase):
+	def test_store_name_is_prefixed_with_api_uri(self):
+		client = MockHttp()
+		store = pynappl.Store("store", client=client)
+		self.assertEqual("http://api.talis.com/stores/store", store.uri)
+	
 	def test_uri_is_stored(self):
 		client = MockHttp()
 		store = pynappl.Store('http://example.com/store', client=client)
