@@ -110,14 +110,14 @@ class Store:
       else:
         return self.response_body_as_graph(response, body)
 
-    def schedule_job(self, type, time, label, snapshot_uri = None):
+    def schedule_job(self, type, time = None, label = None, snapshot_uri = None):
       if time is None:
         time = dt.datetime.utcnow()
       if label is None:
-        label = ''
-      g = Graph();
+        label = 'Job created by pynappl client'
+      g = Graph()
       
-      s = URIRef('')
+      s = BNode()
       g.add( (s, URIRef('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'), URIRef('http://schemas.talis.com/2006/bigfoot/configuration#JobRequest')) )
       g.add( (s, URIRef('http://www.w3.org/2000/01/rdf-schema#label'), Literal(label)) )
       g.add( (s, URIRef('http://schemas.talis.com/2006/bigfoot/configuration#jobType'), URIRef(type)) )
@@ -127,22 +127,23 @@ class Store:
         
       body = g.serialize(format='xml')
       
+      #~ print body
       req_uri = self.build_uri("/jobs")
       return self.client.request(req_uri, "POST", body=body, headers={"accept" : "*/*", 'content-type':'application/rdf+xml'})
 
-    def schedule_reset(self, time=dt.datetime.utcnow(), label='Reset data job created by pynappl client'):
+    def schedule_reset(self, time=None, label='Reset data job created by pynappl client'):
       """Schedule an offline job to reset the data in a store"""
       return self.schedule_job(pynappl.JOB_TYPE_RESET, time, label)
       
-    def schedule_snapshot(self, time=dt.datetime.utcnow(), label='Snapshot job created by pynappl client'):
+    def schedule_snapshot(self, time=None, label='Snapshot job created by pynappl client'):
       """Schedule an offline job to create a snapshot of the data in a store"""
       return self.schedule_job(pynappl.JOB_TYPE_SNAPSHOT, time, label)
 
-    def schedule_reindex(self, time=dt.datetime.utcnow(), label='Reindex job created by pynappl client'):
+    def schedule_reindex(self, time=None, label='Reindex job created by pynappl client'):
       """Schedule an offline job to reindex the data in a store"""
       return self.schedule_job(pynappl.JOB_TYPE_REINDEX, time, label)
 
-    def schedule_restore(self, snapshot_uri, time=dt.datetime.utcnow(), label='Restore job created by pynappl client'):
+    def schedule_restore(self, snapshot_uri, time=None, label='Restore job created by pynappl client'):
       """Schedule an offline job to restore a snapshot to a store"""
       return self.schedule_job(pynappl.JOB_TYPE_RESTORE, time, label, snapshot_uri)
       

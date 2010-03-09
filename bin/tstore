@@ -134,7 +134,7 @@ def error(msg):
   sys.exit(2)
 
 def usage():
-  print """tstore: %s action [option]
+  print """usage: %s action [option]
 A simple command-line interface for working with a Talis Platform store
 Actions:
  backup          [NotImpl] take a snapshot of a store, wait for it to complete
@@ -147,7 +147,7 @@ Actions:
  reset           schedule all data in a store to be deleted
  restore         schedule a snapshot to be uploaded into a store
  sample          show a sample of data from the store's metabox
- sampletype      show a sample of data pf the specified type
+ sampletype      show a sample of data of the specified type
  search          run a free text query against the store
  sparql          run a SPARQL query against the store
  status          show read-write status of the store
@@ -170,7 +170,7 @@ Options:
  --traverse      [NotImpl] recursively store files or RDF
  --base          [NotImpl] base path for uploading files to content box
  --wait          wait for a submitted job to finish
-"""
+""" % os.path.basename(sys.argv[0])
 
 
 def relative_time(t,accuracy=2,cmp_time=None,alternative_past=None):
@@ -288,8 +288,8 @@ def backup(store):
         done = True
         break
       else:
-        msgs = job.progress_updates()
-        print "Job is in progress: %s" % msgs[-1]
+        msgs = job.progress_updates
+        print "Job is in progress: %s" % msgs[-1].message
       time.sleep(10)
 
   else:
