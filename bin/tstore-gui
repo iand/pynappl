@@ -1,7 +1,7 @@
 #!/usr/bin/python
 import pygtk, sys
 pygtk.require("2.0")
-import gtk, pynappl, os, sys, rdflib, httplib2
+import gtk, pynappl, os, sys, rdflib, httplib2, StringIO
 class main:
 	def msg(self, msg, iserror=False):
 		if iserror:
@@ -62,7 +62,9 @@ class main:
 		if resp.status not in range(200, 300):
 			self.error("Could not list stores: (HTTP error %d)" % resp.status, True)
 		g = rdflib.ConjunctiveGraph()
-		g.parse(rdflib.StringInputSource(body))
+		io = StringIO.StringIO(body)
+		g.parse(io)
+		io.close()
 		stores = g.objects(rdflib.URIRef("http://api.talis.com/stores"), rdflib.URIRef("http://schemas.talis.com/2006/bigfoot/configuration#store"))
 		for store_uri in sorted(stores):
 			store_name = store_uri[28:]

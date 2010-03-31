@@ -23,6 +23,7 @@ from rdflib.namespace import Namespace
 from rdflib.term import URIRef, Literal, BNode
 from rdflib.parser import StringInputSource
 import datetime as dt
+import StringIO
 import pynappl
 import xml.etree.ElementTree as et
 import constants
@@ -203,11 +204,38 @@ class Store:
 
     def search(self, query, raw=False):
       req_uri = self.build_uri("/items?query=" + urllib.quote_plus(query))
-      return self.client.request(req_uri, "GET", headers={"accept" : "application/rss+xml"})
+      response, body = self.client.request(req_uri, "GET", headers={"accept" : "application/rss+xml"})
+      if raw:
+        return response, body
+      if response.status in range(200, 300):
+        RDF = Namespace("http://www.w3.org/1999/02/22-rdf-syntax-ns#")
+        RSS = Namespace("http://purl.org/rss/1.0/")
+        g = Graph()
+        g.parse(StringIO.StringIO(body))
+        search_uri = URIRef(req_uri)
+        list = g.objects(search_uri, RSS.items).next()
+        results = []
+        for p, bn in g.predicate_objects(list):
+          if p != RDF.type:
+            o = g.objects(bn, URIRef("resource")).next()
+            results.append(URIRef(o))
+        return response, results
+      else:
+        return response, body
 
     def sparql(self, query):
       req_uri = self.build_uri("/services/sparql?query=" + urllib.quote_plus(query))
       return self.client.request(req_uri, "GET", headers={"accept" : "application/rdf+xml,application/sparql-results+xml"})
+    
+    def ask(self, query, raw = False):
+      response, body = self.sparql(query)
+      if raw:
+        return response, body
+      if response.status in range(200, 300):
+        tree = et.fromstring(body)
+        boolean = tree.find("{http://www.w3.org/2005/sparql-results#}boolean")
+        return response, boolean.text == "true"
+      return response, body
     
     def select(self, query, raw = False):
       response, body = self.sparql(query)

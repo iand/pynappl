@@ -1,0 +1,252 @@
+#!/usr/bin/env python
+
+import sys
+import os
+import time
+import getopt
+import re
+import tempfile
+import difflib
+import httplib2
+import tarfile
+import zipfile
+import rdflib.graph, rdflib.term, rdflib.namespace
+import pynappl
+
+def get_snapshot(client, store, snapshot_file):
+	print "Sending snapshot job request"
+	response, body = store.schedule_snapshot()
+	if response.status in range(200, 300):
+		job_url = response["location"]
+		print "Waiting for job at %s to finish" % job_url
+		while True:
+			response, job = store.read_job(job_url)
+			if job.has_completed():
+				snapshot_url = store.snapshots()[1][0]
+				break
+			elif not job.has_started():
+				print "Job has not started"
+			else:
+				try:
+					msg = job.progress_updates[-1]
+					print "Job in progress:", msg.message
+				except IndexError:
+					print "Job in progress"
+			time.sleep(5)
+		print "Downloading snapshot from %s" % snapshot_url
+		response, body = client.request(snapshot_url, "GET")
+		print "Saving snapshot to %s" % snapshot_file
+		f = open(snapshot_file, "wb")
+		f.write(body)
+		f.close()
+	else:
+		print "Server returned: %s" % response.status
+		print body
+		sys.exit(1)
+
+def extract_snapshot(snapshot_file, snapshot_dir):
+	print "Extracting snapshot to %s" % snapshot_dir
+	#~ t = tarfile.open(snapshot_file, "r")
+	#~ t.extractall(snapshot_dir)
+	#~ t.close()
+	os.system("cd '%s' && tar -xf '%s'" % (snapshot_dir, snapshot_file))
+
+def extract_meta(meta_file, meta_dir):
+	print "Extracting metabox to %s" % os.path.join(meta_dir, "meta")
+	#~ z = zipfile.ZipFile(meta_file, "r")
+	#~ z.extractall(meta_dir)
+	#~ z.close()
+	os.system("unzip '%s' -d '%s'" % (meta_file, meta_dir))
+
+def convert_to_nt(local_files, local_ntdir):
+	files = []
+	for file in local_files:
+		fname = os.path.join(local_ntdir, os.path.basename(file))
+		while os.path.exists(fname):
+			m = re.match(r"^(.*?)\.(\d+)$", fname)
+			base = fname
+			if m:
+				base = m.group(1)
+				n = int(m.group(2))
+			else:
+				n = 1
+			fname = "%s.%s" % (base, n) 
+		print "Converting '%s' to nTriples - saving to '%s'" % (file, fname)
+		g = rdflib.graph.Graph()
+		f = open(file, "r")
+		g.parse(f)
+		f.close()
+		f = open(fname, "w")
+		g.serialize(f, format="nt")
+		f.close()
+		files.append(fname)
+	return files
+
+def merge_graphs(ntfiles, local_file):
+	print "Merging %d files to '%s'" % (len(ntfiles), local_file)
+	os.system("sort '%s' > '%s'" % ("' '".join(ntfiles), local_file))
+
+def parse_nt_val(val):
+	if val.startswith("<") and val.endswith(">"):
+		return rdflib.term.URIRef(val[1:-1])
+	elif val.startswith("_:"):
+		return rdflib.term.BNode(val[2:])
+	else:
+		lang = dt = None
+		if "@" in val:
+			val, lang = val.rsplit("@", 1)
+		elif "^^" in val:
+			val, dt = val.rsplit("^^", 1)
+		return rdflib.term.Literal(val[1:-1], lang, dt)
+
+def compare_graphs(local_file, meta_file, dir):
+	RDF = rdflib.namespace.Namespace("http://www.w3.org/1999/02/22-rdf-syntax-ns#")
+	CS = rdflib.namespace.Namespace("http://purl.org/vocab/changeset/schema#")
+	f1 = open(local_file, "r")
+	f2 = open(meta_file, "r")
+	difflines = [line for line in difflib.ndiff(f1.readlines(), f2.readlines()) if line.startswith(("- ", "+ "))]
+	diff = {}
+	for line in difflines:
+		line = line.strip("\r\n")
+		if not line[2:]:
+			continue
+		try:
+			s, p, o = line[2:].split(" ", 2)
+		except ValueError:
+			print "Failed:", line
+			sys.exit()
+		o, dot = o.rsplit(" ", 1)
+		s = parse_nt_val(s)
+		p = parse_nt_val(p)
+		o = parse_nt_val(o)
+		if s not in diff:
+			diff[s] = [[], []]
+		if line.startswith("- "):
+			diff[s][0].append((p, o))
+		else:
+			diff[s][1].append((p, o))
+	subjects = diff.iterkeys()
+	f1.close()
+	f2.close()
+	i = 1
+	changesets = []
+	while True:
+		n = 0
+		g = rdflib.graph.Graph()
+		g.bind("rdf", RDF)
+		g.bind("cs", CS)
+		stop = False
+		while n < 14:
+			try:
+				s = subjects.next()
+			except StopIteration:
+				stop = True
+				break
+			cs = rdflib.term.BNode()
+			g.add((cs, RDF.type, CS.ChangeSet))
+			g.add((cs, CS.subjectOfChange, s))
+			g.add((cs, CS.createdDate, rdflib.Literal(time.strftime('%Y-%m-%dT%H:%M:%SZ'))))
+			g.add((cs, CS.creatorName, rdflib.Literal("Pynappl TDiff")))
+			g.add((cs, CS.changeReason, rdflib.Literal("Update of store")))
+			for p, o in diff[s][0]:
+				addition = rdflib.term.BNode()
+				g.add((cs, CS.addition, addition))
+				g.add((addition, RDF.type, RDF.Statement))
+				g.add((addition, RDF.subject, s))
+				g.add((addition, RDF.predicate, p))
+				g.add((addition, RDF.object, o))
+			for p, o in diff[s][1]:
+				removal = rdflib.term.BNode()
+				g.add((cs, CS.removal, removal))
+				g.add((removal, RDF.type, RDF.Statement))
+				g.add((removal, RDF.subject, s))
+				g.add((removal, RDF.predicate, p))
+				g.add((removal, RDF.object, o))
+			n += 1
+		if n > 0:
+			fname = os.path.join(dir, "changeset-%d.rdf" % i)
+			print "Writing %d changesets to '%s'" % (n, fname)
+			f = open(fname, "w")
+			g.serialize(f)
+			f.close()
+			changesets.append(fname)
+			i += 1
+		if stop:
+			break
+	return changesets
+
+def apply_changesets(client, store, changesets):
+	uri = store.build_uri("/meta")
+	for fname in changesets:
+		f = open(fname, "r")
+		data = f.read()
+		f.close()
+		headers = {"Content-Type": "application/vnd.talis.changeset+xml"}
+		response, body = client.request(uri, "POST", data, headers)
+		if response.status not in range(200, 300):
+			print "Changeset upload failed (%s): %d %s" % (fname, response.status, response.reason)
+			return
+		else:
+			print "Successfully uploaded changeset '%s'" % fname
+
+def main():
+	t1 = time.time()
+	try:
+		opts, args = getopt.gnu_getopt(sys.argv[1:], "u:p:d:a", ["username=", "password=", "dir=", "apply"])
+		username = password = None
+		outdir = os.getcwd()
+		apply = False
+		for k, v in opts:
+			if k in ("-u", "--username"):
+				username = v
+			elif k in ("-p", "--password"):
+				password = v
+			elif k in ("-d", "--dir"):
+				outdir = v
+			elif k in ("-a", "--apply"):
+				apply = True
+		storename = args[0]
+		file = args[1]
+		if os.path.isdir(file):
+			local_files = []
+			for item in os.listdir(file):
+				local_files.append(os.path.join(file, item))
+		else:
+			local_files = [file]
+		
+		dir = tempfile.mkdtemp()
+		snapshot_file = os.path.join(dir, "snapshot.tar")
+		snapshot_dir = os.path.join(dir, "snapshot")
+		meta_file = os.path.join(snapshot_dir, "metabox", "meta.zip")
+		meta_dir = os.path.join(dir, "meta")
+		meta_sorted = os.path.join(dir, "meta.nt")
+		local_ntdir = os.path.join(dir, "local")
+		local_file = os.path.join(dir, "local.nt")
+		for subdir in [snapshot_dir, meta_dir, local_ntdir, outdir]:
+			try:
+				os.makedirs(subdir)
+			except:
+				pass
+		store_files = [os.path.join(meta_dir, "meta")]
+		
+		client = httplib2.Http()
+		client.follow_all_redirects = True
+		if username is not None:
+			client.add_credentials(username, password)
+		store = pynappl.Store(storename, client=client)
+		
+		get_snapshot(client, store, snapshot_file)
+		extract_snapshot(snapshot_file, snapshot_dir)
+		extract_meta(meta_file, meta_dir)
+		ntfiles = convert_to_nt(local_files, local_ntdir)
+		merge_graphs(ntfiles, local_file)
+		merge_graphs(store_files, meta_sorted)
+		changesets = compare_graphs(local_file, meta_sorted, outdir)
+		if apply and len(changesets):
+			apply_changesets(client, store, changesets)
+	finally:
+		t2 = time.time()
+		print "Finished in %d secs" % int(round(t2 - t1))
+
+if __name__ == "__main__":
+	main()
