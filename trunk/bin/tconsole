@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import readline
+import re
 import getpass
 import shlex
 import httplib2
@@ -15,7 +16,7 @@ class CommandDispatcher(object):
 			"rdf": "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
 			"rdfs": "http://www.w3.org/2000/01/rdf-schema#",
 			"dc": "http://purl.org/dc/elements/1.1/",
-			"dct": "http://purl.org/dc/terms",
+			"dct": "http://purl.org/dc/terms/",
 			"owl": "http://www.w3.org/2002/07/owl#",
 			"cs": "http://purl.org/vocab/changeset/schema#",
 			"foaf": "http://xmlns.com/foaf/0.1/",
@@ -28,7 +29,20 @@ class CommandDispatcher(object):
 			"xsd": "http://www.w3.org/2001/XMLSchema#",
 			"dbp": "http://dbpedia.org/resource/",
 			"dbpo": "http://dbpedia.org/ontology/",
+			"rss": "http://purl.org/rss/1.0/",
+			"geonames": "http://www.geonames.org/ontology/",
 		}
+		self.title_props = [
+			"http://www.w3.org/2004/02/skos/core#prefLabel",
+			"http://www.w3.org/2000/01/rdf-schema#label",
+			"http://purl.org/dc/terms/title",
+			"http://purl.org/dc/elements/1.1/title",
+			"http://xmlns.com/foaf/0.1/name",
+			"http://www.geonames.org/ontology/name",
+			"http://www.w3.org/1999/02/22-rdf-syntax-ns#value",
+			"http://purl.org/rss/1.0/title",
+		]
+		self.uris = []
 	
 	def __call__(self, words):
 		name = "handle_" + words[0].lower()
@@ -53,7 +67,9 @@ class CommandDispatcher(object):
 			g.bind(prefix, ns)
 	
 	def geturi(self, v):
-		if v[0] == "<" and v[-1] == ">":
+		if v.isdigit() and int(v) < len(self.uris):
+			return self.uris[int(v)]
+		elif v[0] == "<" and v[-1] == ">":
 			return rdflib.URIRef(v[1:-1])
 		else:
 			prefix, name = v.split(":")
@@ -73,6 +89,15 @@ class CommandDispatcher(object):
 			return rdflib.BNode(v[2:])
 		else:
 			return self.geturi(v)
+	
+	def gettitle(self, g, obj):
+		for prop in self.title_props:
+			it = g.objects(obj, rdflib.URIRef(prop))
+			try:
+				return str(it.next())
+			except StopIteration:
+				pass
+		return g.qname(obj)
 	
 	def handle_login(self, un=None):
 		if not un:
@@ -161,7 +186,7 @@ class CommandDispatcher(object):
 	def handle_prefix(self, prefix, ns):
 		self.prefixes[prefix] = self.geturi(ns)
 	
-	def handle_show(self, what):
+	def handle_list(self, what):
 		if what.lower() == "prefixes":
 			for prefix, ns in self.prefixes.iteritems():
 				print "%s: <%s>" % (prefix, ns)
@@ -169,6 +194,9 @@ class CommandDispatcher(object):
 	def handle_sparql(self, query):
 		if self.store is None:
 			self.handle_use()
+		print query
+		query = re.sub(r"\b+([-_a-zA-Z0-9]+):([-_a-zA-Z0-9]+)\b+", (lambda m: "<" + self.bindings[m.group(1)] + m.group(2) + ">"), query)
+		print query
 		cmd = query.split()[0].upper()
 		if cmd == "SELECT":
 			results = self.execute(self.store.select, query)
@@ -189,7 +217,8 @@ class CommandDispatcher(object):
 				print "=+=".join(sep)
 				for d in results:
 					line = []
-					for h, v in d.iteritems():
+					for h in headers:
+						v = d[h]
 						line.append(str(v).center(sizes[h]))
 					print " | ".join(line)
 		elif cmd == "ASK":
@@ -208,10 +237,46 @@ class CommandDispatcher(object):
 	def handle_search(self, query):
 		if self.store is None:
 			self.handle_use()
-		results = self.execute(self.store.search, query)
+		results = self.execute(self.store.search, query, return_graph=True)
 		if results:
+			g, results = results
 			for result in results:
-				print str(result)
+				print "%s (%s)" % (self.gettitle(g, results), str(result))
+	
+	def handle_get(self, what, of):
+		if self.store is None:
+			self.handle_use()
+		if what == "title":
+			of = self.geturi(of)
+			g = self.execute(self.store.describe, of)
+			if g:
+				print self.gettitle(g, of)
+	
+	def handle_show(self, what):
+		if self.store is None:
+			self.handle_use()
+		if what == "classes":
+			results = self.execute(self.store.select, "SELECT DISTINCT ?class WHERE {[] a ?class.}")
+			if results:
+				for d in results[1]:
+					print d["class"]
+		elif what == "properties":
+			results = self.execute(self.store.select, "SELECT DISTINCT ?prop WHERE {[] ?prop [].}")
+			if results:
+				for d in results[1]:
+					print d["prop"]
+		elif what == "topclasses":
+			results = self.execute(self.store.select, "SELECT ?class (count(?s) as ?count) WHERE {?s a ?class.} GROUP BY ?class ORDER BY desc(?count) LIMIT 5")
+			if results:
+				for d in results[1]:
+					print d["class"]
+	
+	def handle_count(self):
+		if self.store is None:
+			self.handle_use()
+		results = self.execute(self.store.select, "SELECT (count(*) as ?count) WHERE {[] ?p [].}")
+		if results:
+			print "%s triples" % results[1][0]["count"]
 	
 	def handle_fpmap(self):
 		if self.store is None:
@@ -246,6 +311,22 @@ class CommandDispatcher(object):
 					prefix = words[1]
 					ns = self.geturi(words[2])
 					self.prefixes[prefix] = ns
+	
+	def handle_sample(self, cls=None):
+		if self.store is None:
+			self.handle_use()
+		if cls:
+			query = "SELECT DISTINCT ?s WHERE {?s a <%s>.} LIMIT 10" % self.geturi(cls)
+		else:
+			query = "SELECT DISTINCT ?s WHERE {?s ?p [].} LIMIT 10"
+		results = self.execute(self.store.select, query)
+		if results:
+			i = 0
+			self.uris = []
+			for d in results[1]:
+				print str(i) + ". " + d["s"]
+				i += 1
+				self.uris.append(d["s"])
 
 def main():
 	d = CommandDispatcher()
