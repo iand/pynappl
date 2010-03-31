@@ -76,12 +76,13 @@ class CommandDispatcher(object):
     self.uris = []
 
   def __call__(self, words):
-    try:
-      name = "handle_" + words[0].lower()
-      if hasattr(self, name):
-        getattr(self, name)(*words[1:])
-    except:
-      traceback.print_exc()
+    if words:
+      try:
+        name = "handle_" + words[0].lower()
+        if hasattr(self, name):
+          getattr(self, name)(*words[1:])
+      except:
+        traceback.print_exc()
 
   def execute(self, func, *args, **kwds):
     while True:
@@ -206,30 +207,36 @@ class CommandDispatcher(object):
       vars.append(o)
     else:
       o = self.getval(o)
-    print "Querying data..."
-    query = "SELECT %s WHERE {%s %s %s.}" % (" ".join(vars), self.mkval(s), self.mkval(p), self.mkval(o))
-    results = self.execute(self.store.select, query)
-    if results:
-      cs = pynappl.BatchChangeSet()
-      cs.setChangeReason(changeReason)
-      cs.setCreatorName(creatorName)
-      for d in results[1]:
-        for h, v in d.iteritems():
-          if h == "s":
-            s = v
-          elif h == "p":
-            p = v
-          elif h == "o":
-            o = v
-        cs.remove(s, p, o)
-      headers = {"Content-Type": "application/vnd.talis.changeset+xml"}
-      uri = self.store.build_uri("/meta")
-      graphs = list(cs.getGraphs())
-      nGraphs = len(graphs)
-      for i, g in enumerate(graphs):
-        body = g.serialize(format="xml")
-        print "Applying changeset %d/%d (%d bytes)..." % (i + 1, nGraphs, len(body))
-        self.execute(self.client.request, uri, "POST", body, headers)
+    cs = pynappl.BatchChangeSet()
+    cs.setChangeReason(changeReason)
+    cs.setCreatorName(creatorName)
+    if vars:
+      print "Querying data..."
+      query = "SELECT %s WHERE {%s %s %s.}" % (" ".join(vars), self.mkval(s), self.mkval(p), self.mkval(o))
+      results = self.execute(self.store.select, query)
+      if results:
+        for d in results[1]:
+          for h, v in d.iteritems():
+            if h == "s":
+              s = v
+            elif h == "p":
+              p = v
+            elif h == "o":
+              o = v
+          cs.remove(s, p, o)
+      else:
+        return
+    else:
+      cs.remove(s, p, o)
+
+    headers = {"Content-Type": "application/vnd.talis.changeset+xml"}
+    uri = self.store.build_uri("/meta")
+    graphs = list(cs.getGraphs())
+    nGraphs = len(graphs)
+    for i, g in enumerate(graphs):
+      body = g.serialize(format="xml")
+      print "Applying changeset %d/%d (%d bytes)..." % (i + 1, nGraphs, len(body))
+      self.execute(self.client.request, uri, "POST", body, headers)
 
   def handle_prefix(self, prefix, ns):
     self.prefixes[prefix] = self.geturi(ns)
@@ -290,7 +297,7 @@ class CommandDispatcher(object):
       i = 0
       self.uris = []
       for result in results:
-        print "%d. %s (%s)" % (self.gettitle(g, results), str(result))
+        print "%d. %s (%s)" % (i, self.gettitle(g, result), str(result))
         i += 1
         self.uris.append(result)
 
@@ -399,6 +406,32 @@ class CommandDispatcher(object):
 
   def handle_whereami(self):
     print "You're at:", self.pointer
+
+  def handle_help(self):
+    print "Note: {uri} represents a URI delimited by angle brackets or a qname"
+    print "help               - show this help text"
+    print "exit               - exit the shell"
+    print "login              - prompt for username and password to use"
+    print "use {storename}    - set storename to be the current store"
+    print "list prefixes      - show the current list of prefixes"
+    print "prefix {p} {uri}   - map prefix p to the given URI"
+    print "sample             - list 10 resources at random"
+    print "sample {uri}       - list 10 resources with the given type"
+    print "store {filename}   - upload the triples held in filename to the store's metabox"
+    print "count              - count the number of triples in the store"
+    print "show classes       - show a list of classes used in the store"
+    print "show properties    - show a list of properties used in the store"
+    print "show topclasses    - show a list of the top 5 classes used in the store, with counts"
+    print "describe {uri}     - get the CBD of the given URI"
+    print "sparql {query}     - execute a sparql query"
+    print "search {query}     - execute a full text query"
+    print "add {s} {p} {o}    - add a triple to the store"
+    print "remove {s} {p} {o} - remove a triple to the store"
+    print "remove {s} {p}     - remove all triples with specified subject and predicate"
+    print "remove {s}         - remove all triples with specified subject"
+    print "remove {s} - {o}   - remove all triples with specified subject and object"
+    print "remove - - {o}     - remove all triples with specified object"
+
 
 def main():
   p = optparse.OptionParser()
