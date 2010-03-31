@@ -10,6 +10,7 @@ import pynappl
 
 class CommandDispatcher(object):
 	def __init__(self):
+		self.pointer = None
 		self.client = httplib2.Http()
 		self.store = None
 		self.prefixes = {
@@ -116,10 +117,14 @@ class CommandDispatcher(object):
 			self.handle_use()
 		self.execute(self.store.store_file, filename)
 	
-	def handle_describe(self, uri):
+	def handle_describe(self, uri=None):
 		if self.store is None:
 			self.handle_use()
-		g = self.execute(self.store.describe, self.geturi(uri))
+		if uri is None and self.pointer is not None:
+			uri = self.pointer
+		else:
+			uri = self.geturi(uri)
+		g = self.execute(self.store.describe, uri)
 		self.bind_prefixes(g)
 		if g:
 			print g.serialize(format="turtle")
@@ -130,7 +135,7 @@ class CommandDispatcher(object):
 		s = self.getval(s)
 		p = self.getval(p)
 		o = self.getval(o)
-		cs = pynappl.Changeset(s)
+		cs = pynappl.ChangeSet(s)
 		cs.setChangeReason(changeReason)
 		cs.setCreatorName(creatorName)
 		cs.add(p, o)
@@ -240,14 +245,21 @@ class CommandDispatcher(object):
 		results = self.execute(self.store.search, query, return_graph=True)
 		if results:
 			g, results = results
+			i = 0
+			self.uris = []
 			for result in results:
-				print "%s (%s)" % (self.gettitle(g, results), str(result))
+				print "%d. %s (%s)" % (self.gettitle(g, results), str(result))
+				i += 1
+				self.uris.append(result)
 	
-	def handle_get(self, what, of):
+	def handle_get(self, what, of=None):
 		if self.store is None:
 			self.handle_use()
-		if what == "title":
+		if of is None and self.pointer is not None:
+			of = self.pointer
+		else:
 			of = self.geturi(of)
+		if what == "title":
 			g = self.execute(self.store.describe, of)
 			if g:
 				print self.gettitle(g, of)
@@ -258,18 +270,30 @@ class CommandDispatcher(object):
 		if what == "classes":
 			results = self.execute(self.store.select, "SELECT DISTINCT ?class WHERE {[] a ?class.}")
 			if results:
+				self.uris = []
+				i = 0
 				for d in results[1]:
-					print d["class"]
+					print str(i) + ". " + d["class"]
+					i += 1
+					self.uris.append(d["class"])
 		elif what == "properties":
 			results = self.execute(self.store.select, "SELECT DISTINCT ?prop WHERE {[] ?prop [].}")
 			if results:
+				self.uris = []
+				i = 0
 				for d in results[1]:
-					print d["prop"]
+					print str(i) + ". " + d["prop"]
+					i += 1
+					self.uris.append(d["prop"])
 		elif what == "topclasses":
 			results = self.execute(self.store.select, "SELECT ?class (count(?s) as ?count) WHERE {?s a ?class.} GROUP BY ?class ORDER BY desc(?count) LIMIT 5")
 			if results:
+				self.uris = []
+				i = 0
 				for d in results[1]:
-					print d["class"]
+					print str(i) + ". " + d["class"]
+					i += 1
+					self.uris.append(d["class"])
 	
 	def handle_count(self):
 		if self.store is None:
@@ -327,11 +351,19 @@ class CommandDispatcher(object):
 				print str(i) + ". " + d["s"]
 				i += 1
 				self.uris.append(d["s"])
+	
+	def handle_goto(self, uri):
+		self.pointer = self.geturi(uri)
+	
+	def handle_whereami(self):
+		print "You're at:", self.pointer
 
 def main():
 	d = CommandDispatcher()
 	while True:
 		line = raw_input(">>> ")
+		if not line:
+			continue
 		words = shlex.split(line)
 		if words[0].lower() in ("exit", "quit"):
 			return
