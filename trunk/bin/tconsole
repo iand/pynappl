@@ -3,11 +3,39 @@
 import readline
 import re
 import getpass
-import shlex
 import httplib2
 import rdflib
 import pynappl
 import traceback
+import StringIO
+
+def splitline(line):
+	words = []
+	f = StringIO.StringIO(line)
+	while True:
+		s = f.read(1)
+		if not s:
+			break
+		if s == " ":
+			continue
+		if s in "\"'":
+			stop = s
+		elif s == "<":
+			stop = ">"
+		else:
+			stop = " "
+		while True:
+			c = f.read(1)
+			if not c:
+				break
+			if c == stop:
+				if c != " ":
+					s += c
+				break
+			else:
+				s += c
+		words.append(s)
+	return words
 
 class CommandDispatcher(object):
 	def __init__(self):
@@ -366,15 +394,7 @@ def main():
 	d = CommandDispatcher()
 	while True:
 		line = raw_input(">>> ")
-		if not line:
-			continue
-		s = shlex.shlex(line)
-		words = []
-		while True:
-			tok = s.get_token()
-			if not tok:
-				break
-			words.append(tok)
+		words = splitline(line)
 		if words[0].lower() in ("exit", "quit"):
 			return
 		d(words)
