@@ -8,6 +8,7 @@ import rdflib
 import pynappl
 import traceback
 import StringIO
+import optparse
 
 def splitline(line):
 	words = []
@@ -128,6 +129,8 @@ class CommandDispatcher(object):
 			return repr(str(val))
 		elif isinstance(val, rdflib.URIRef):
 			return "<" + val + ">"
+		elif isinstance(val, str):
+			return val
 		else:
 			return "_:" + val
 	
@@ -207,12 +210,6 @@ class CommandDispatcher(object):
 		query = "SELECT %s WHERE {%s %s %s.}" % (" ".join(vars), self.mkval(s), self.mkval(p), self.mkval(o))
 		results = self.execute(self.store.select, query)
 		if results:
-			if s not in vars:
-				s = self.getval(s)
-			if p not in vars:
-				p = self.getval(p)
-			if o not in vars:
-				o = self.getval(o)
 			cs = pynappl.BatchChangeSet()
 			cs.setChangeReason(changeReason)
 			cs.setCreatorName(creatorName)
@@ -403,13 +400,29 @@ class CommandDispatcher(object):
 		print "You're at:", self.pointer
 
 def main():
+	p = optparse.OptionParser()
+	p.add_option("-u", "--username", action="store", dest="username", metavar="USERNAME", help="login in as USERNAME")
+	p.add_option("-p", "--password", action="store", dest="password", metavar="PASSWORD", help="login in with PASSWORD")
+	opts, args = p.parse_args()
 	d = CommandDispatcher()
-	while True:
-		line = raw_input(">>> ")
-		words = splitline(line)
-		if words[0].lower() in ("exit", "quit"):
-			return
-		d(words)
+	if opts.username and opts.password:
+		d.client.add_credentials(opts.username, opts.password)
+	if len(args):
+		for file in args:
+			f = open(file, "r")
+			for line in f:
+				line = line.strip()
+				if line:
+					words = splitline(line)
+					d(words)
+			f.close()
+	else:
+		while True:
+			line = raw_input(">>> ")
+			if line.lower() in ("exit", "quit"):
+				return
+			words = splitline(line)
+			d(words)
 
 if __name__ == "__main__":
 	main()
