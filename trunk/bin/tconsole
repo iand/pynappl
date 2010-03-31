@@ -7,6 +7,7 @@ import shlex
 import httplib2
 import rdflib
 import pynappl
+import traceback
 
 class CommandDispatcher(object):
 	def __init__(self):
@@ -46,9 +47,12 @@ class CommandDispatcher(object):
 		self.uris = []
 	
 	def __call__(self, words):
-		name = "handle_" + words[0].lower()
-		if hasattr(self, name):
-			getattr(self, name)(*words[1:])
+		try:
+			name = "handle_" + words[0].lower()
+			if hasattr(self, name):
+				getattr(self, name)(*words[1:])
+		except:
+			traceback.print_exc()
 	
 	def execute(self, func, *args, **kwds):
 		while True:
@@ -364,7 +368,13 @@ def main():
 		line = raw_input(">>> ")
 		if not line:
 			continue
-		words = shlex.split(line)
+		s = shlex.shlex(line)
+		words = []
+		while True:
+			tok = s.get_token()
+			if not tok:
+				break
+			words.append(tok)
 		if words[0].lower() in ("exit", "quit"):
 			return
 		d(words)
