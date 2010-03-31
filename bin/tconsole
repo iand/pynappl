@@ -123,6 +123,14 @@ class CommandDispatcher(object):
 		else:
 			return self.geturi(v)
 	
+	def mkval(self, val):
+		if isinstance(val, rdflib.Literal):
+			return repr(str(val))
+		elif isinstance(val, rdflib.URIRef):
+			return "<" + val + ">"
+		else:
+			return "_:" + val
+	
 	def gettitle(self, g, obj):
 		for prop in self.title_props:
 			it = g.objects(obj, rdflib.URIRef(prop))
@@ -183,14 +191,20 @@ class CommandDispatcher(object):
 		if s == "-":
 			s = "?s"
 			vars.append(s)
+		else:
+			s = self.getval(s)
 		if p == "-":
 			p = "?p"
 			vars.append(p)
+		else:
+			p = self.getval(p)
 		if o == "-":
 			o = "?o"
 			vars.append(o)
+		else:
+			o = self.getval(o)
 		print "Querying data..."
-		query = "SELECT %s WHERE {%s %s %s.}" % (" ".join(vars), s, p, o)
+		query = "SELECT %s WHERE {%s %s %s.}" % (" ".join(vars), self.mkval(s), self.mkval(p), self.mkval(o))
 		results = self.execute(self.store.select, query)
 		if results:
 			if s not in vars:
@@ -228,12 +242,10 @@ class CommandDispatcher(object):
 			for prefix, ns in self.prefixes.iteritems():
 				print "%s: <%s>" % (prefix, ns)
 	
-	def handle_sparql(self, query):
+	def handle_sparql(self, *queryparts):
 		if self.store is None:
 			self.handle_use()
-		print query
-		query = re.sub(r"\b+([-_a-zA-Z0-9]+):([-_a-zA-Z0-9]+)\b+", (lambda m: "<" + self.bindings[m.group(1)] + m.group(2) + ">"), query)
-		print query
+		query = re.sub(r"\b+([-_a-zA-Z0-9]+):([-_a-zA-Z0-9]+)\b+", (lambda m: "<" + self.bindings[m.group(1)] + m.group(2) + ">"), " ".join(queryparts))
 		cmd = query.split()[0].upper()
 		if cmd == "SELECT":
 			results = self.execute(self.store.select, query)
