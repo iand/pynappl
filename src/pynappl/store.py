@@ -202,7 +202,7 @@ class Store:
         return (response, status)
       return (response, "")
 
-    def search(self, query, raw=False):
+    def search(self, query, raw=False, return_graph=False):
       req_uri = self.build_uri("/items?query=" + urllib.quote_plus(query))
       response, body = self.client.request(req_uri, "GET", headers={"accept" : "application/rss+xml"})
       if raw:
@@ -219,6 +219,8 @@ class Store:
           if p != RDF.type:
             o = g.objects(bn, URIRef("resource")).next()
             results.append(URIRef(o))
+        if return_graph:
+          results = (g, results)
         return response, results
       else:
         return response, body
