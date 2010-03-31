@@ -399,7 +399,7 @@ def store_url(store, url):
     
 def store_dir(store, dir):
   rdfmanager = pynappl.RDFManager(store, dir, False, "\.rdf$")
-  rdfmanager.process()
+  rdfmanager.process(True)
 
 def getfpmap(store, raw):
   (response, fpmap) = check_response(store.read_fpmap(raw))
