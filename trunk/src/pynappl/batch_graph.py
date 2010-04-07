@@ -3,8 +3,8 @@ from rdflib.graph import Graph
 class BatchGraph:
   def __len__(self):
     return self.g.__len__()
-  
-  
+
+
   def __init__(self, batch_size, file_prefix, format):
     self.total_triples = 0
     self.current_batch = 1
@@ -13,14 +13,14 @@ class BatchGraph:
     self.format = format
     self.bindings = {}
     self.reset()
-    
+
   def reset(self):
     self.g = Graph()
     self.triple_count = 0
     for prefix, ns in self.bindings.items():
       self.g.bind(prefix, ns)
-      
-  
+
+
   def bind(self, prefix, ns):
     self.bindings[prefix] =  ns
     self.g.bind(prefix, ns)
@@ -40,7 +40,7 @@ class BatchGraph:
       format_name = "turtle"
     else:
       format_name = "pretty-xml"
-      
+
     g_file.write(self.g.serialize(format=format_name))
     g_file.close()
     self.reset()
@@ -49,3 +49,6 @@ class BatchGraph:
   def serialize(self, format):
     return self.g.serialize(format)
 
+  def parse(self, source, publicID=None, format='xml', **args):
+    ret = self.g.parse(source, publicID, format, **args)
+    return ret
