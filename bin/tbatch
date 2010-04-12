@@ -18,15 +18,15 @@ def main():
     error("required action missing")
   elif len(args) > 1:
     error("only one action can be specified")
-        
+
   output = None
-  
+
   store_uri = None
   username = None
   password = None
   dirname = None
   traverse = False
-  
+
   for o, v in opts:
     if o in ("-s", "--store"):
       store_uri = v
@@ -51,9 +51,9 @@ def main():
 
   if dirname is None:
     error("directory not specified")
-    
+
   store = pynappl.Store(store_uri, username, password)
-  manager = pynappl.RDFManager(store, dirname, traverse, "\.rdf$")
+  manager = pynappl.RDFManager(store, dirname, traverse, "\.(rdf|nt|ttl)$")
 
   if args[0] == "summary":
     print manager.summary()
@@ -89,7 +89,7 @@ Manage file based batch upload of RDF to a Talis Platform store
 
 Actions:
  failures        list all files marked as failing
- new             list all files that don't have an ok or fail file      
+ new             list all files that don't have an ok or fail file
  reset           remove all failure and success files
  retry           retry all files marked as failing
  store           upload some RDF data to a store's metabox
@@ -102,7 +102,7 @@ Options:
  -p/--password   specify password
  -s/--store      specify store name. Can be just name, or full URL
  --dir           specify a directory, e.g. containing data to upload
-                 or location to place data. 
+                 or location to place data.
  --traverse      [NotImpl] recursively store files or RDF
 """
 
