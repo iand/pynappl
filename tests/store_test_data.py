@@ -1,6 +1,8 @@
 SINGLE_TRIPLE = '<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:foaf="http://xmlns.com/foaf/0.1/"><rdf:Description><foaf:name>scooby</foaf:name></rdf:Description></rdf:RDF>'
+SINGLE_TRIPLE_TURTLE = '[] foaf:name "scooby" .'
+SINGLE_TRIPLE_NTRIPLES = '_:a foaf:name "scooby" .'
 JOB_URI = "http://example.com/store/jobs/a193f791-b29e-4802-b54e-0d8587d747b3"
-JOB_DATA = """<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:j.0="http://purl.org/dc/terms/" xmlns:j.1="http://schemas.talis.com/2006/bigfoot/configuration#" xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#"> 
+JOB_DATA = """<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:j.0="http://purl.org/dc/terms/" xmlns:j.1="http://schemas.talis.com/2006/bigfoot/configuration#" xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#">
   <rdf:Description rdf:about="http://example.com/store/jobs/a193f791-b29e-4802-b54e-0d8587d747b3/767238a2-7309-424c-ab20-a40fb457c042">
     <j.1:progressUpdateTime rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2009-08-12T01:19:12Z</j.1:progressUpdateTime>
     <j.1:progressUpdateMessage>Reset Data job running for store.</j.1:progressUpdateMessage>
@@ -20,13 +22,13 @@ JOB_DATA = """<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" x
   </rdf:Description>
 </rdf:RDF>"""
 
-STORE_ACCESS_STATUS_RW = """<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:bf="http://schemas.talis.com/2006/bigfoot/configuration#"> 
+STORE_ACCESS_STATUS_RW = """<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:bf="http://schemas.talis.com/2006/bigfoot/configuration#">
   <rdf:Description rdf:about="http://example.com/store/config/access-status">
     <bf:accessMode rdf:resource="http://schemas.talis.com/2006/bigfoot/statuses#read-write"/>
   </rdf:Description>
 </rdf:RDF>"""
 
-STORE_ACCESS_STATUS_RO = """<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:bf="http://schemas.talis.com/2006/bigfoot/configuration#"> 
+STORE_ACCESS_STATUS_RO = """<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:bf="http://schemas.talis.com/2006/bigfoot/configuration#">
   <rdf:Description rdf:about="http://example.com/store/config/access-status">
     <bf:retryInterval>30</bf:retryInterval>
     <bf:statusMessage>Being reindexed</bf:statusMessage>
@@ -34,7 +36,7 @@ STORE_ACCESS_STATUS_RO = """<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf
   </rdf:Description>
 </rdf:RDF>"""
 
-STORE_ACCESS_STATUS_UN = """<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:bf="http://schemas.talis.com/2006/bigfoot/configuration#"> 
+STORE_ACCESS_STATUS_UN = """<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:bf="http://schemas.talis.com/2006/bigfoot/configuration#">
   <rdf:Description rdf:about="http://example.com/store/config/access-status">
     <bf:retryInterval>30</bf:retryInterval>
     <bf:statusMessage>Offline for maintenance</bf:statusMessage>
@@ -73,7 +75,7 @@ SEARCH_DATA="""<?xml version='1.0' encoding='UTF-8'?><rdf:RDF xmlns="http://purl
 SNAPSHOT_DATA="""<rdf:RDF
     xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
     xmlns:dc="http://purl.org/dc/elements/1.1/"
-    xmlns:j.0="http://schemas.talis.com/2006/bigfoot/configuration#" > 
+    xmlns:j.0="http://schemas.talis.com/2006/bigfoot/configuration#" >
   <rdf:Description rdf:about="http://example.com/store">
     <j.0:snapshot rdf:resource="http://example.com/store/snapshots/20090821120029.tar"/>
   </rdf:Description>
@@ -86,7 +88,7 @@ SNAPSHOT_DATA="""<rdf:RDF
 
 FPMAP_DATA="""<rdf:RDF
     xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
-    xmlns:j.0="http://schemas.talis.com/2006/frame/schema#" > 
+    xmlns:j.0="http://schemas.talis.com/2006/frame/schema#" >
   <rdf:Description rdf:about="http://api.talis.com/stores/openlibrary/config/fpmaps/1#name">
     <j.0:name>name</j.0:name>
     <j.0:property rdf:resource="http://xmlns.com/foaf/0.1/name"/>
@@ -207,7 +209,7 @@ FPMAP_DATA="""<rdf:RDF
 QPROFILE_DATA = """<rdf:RDF
     xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
     xmlns:j.0="http://schemas.talis.com/2006/frame/schema#"
-    xmlns:j.1="http://schemas.talis.com/2006/bigfoot/configuration#" > 
+    xmlns:j.1="http://schemas.talis.com/2006/bigfoot/configuration#" >
   <rdf:Description rdf:about="http://api.talis.com/stores/openlibrary/config/queryprofiles/1#subject">
     <j.1:weight>1</j.1:weight>
     <j.0:name>subject</j.0:name>
