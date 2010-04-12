@@ -34,12 +34,12 @@ class BatchGraph:
 
   def flush(self):
     g_file = open("%s%s.%s" % (self.file_prefix, self.current_batch, self.format), "w")
-    if self.format == "nt":
-      format_name = "ntriples"
-    elif self.format == "ttl":
+    if self.format == "ttl":
       format_name = "turtle"
-    else:
+    elif self.format == "rdf":
       format_name = "pretty-xml"
+    else:
+      format_name = self.format
 
     g_file.write(self.g.serialize(format=format_name))
     g_file.close()
