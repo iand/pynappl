@@ -27,7 +27,6 @@ import StringIO
 import pynappl
 import xml.etree.ElementTree as et
 import constants
-import re
 
 class Store:
     def __init__(self,uri, username = None, password = None, client = None):
@@ -36,10 +35,10 @@ class Store:
         self.client.follow_all_redirects = True
       else:
         self.client = client
-
+        
       if password is not None and username is not None:
         self.client.add_credentials(username, password)
-
+      
       if not uri.startswith(("http://", "https://")):
         uri = "http://api.talis.com/stores/" + uri
 
@@ -48,23 +47,20 @@ class Store:
 
     def store_data(self, data, graph_name=None):
       """Store some RDF in the Metabox associated with this store. Default is to store the
-         data in the metabox, but a private graph name can also be specified."""
+         data in the metabox, but a private graph name can also be specified."""    
 
       req_uri = None
       if graph_name is None:
         req_uri = self.build_uri("/meta")
       else:
-        req_uri = self.build_uri("/meta/graphs/%s" % graph_name)
-
-      content_type = 'text/turtle'
-      if re.search('<[a-zA-Z0-9-]+\:RDF', data[:256]):
-        content_type = 'application/rdf+xml'
-      return self.client.request(req_uri, "POST", body=data, headers={"accept" : "*/*", 'content-type':content_type})
-
+        req_uri = self.build_uri("/meta/graphs/%s" % graph_name)  
+      
+      return self.client.request(req_uri, "POST", body=data, headers={"accept" : "*/*", 'content-type':'application/rdf+xml'})
+    
     def store_file(self, filename, graph_name=None):
       """Store the contents of a File (file-like object) in the Metabox associated with this store
          The client does not support streaming submissions of data, so the stream will be fully read before data is submitted to the platform
-         file:: an IO object
+         file:: an IO object      
       """
       file = open(filename, 'r')
       data = file.read()
@@ -79,7 +75,7 @@ class Store:
     def store_url(self, url, graph_name=None):
       """Store the result of fetching a URL in the Metabox associated with this store"""
       (response, body) = self.client.request(url, "GET", headers={"accept" : "application/rdf+xml, application/xml;q=0.1, text/xml;q=0.1"})
-
+      
       if response.status not in range (200,300):
         raise PynapplError("Unable to read data from %s. Response was %s %s " % (url, response.status, response.reason) )
       return self.store_data(body, graph_name)
@@ -121,7 +117,7 @@ class Store:
       if label is None:
         label = 'Job created by pynappl client'
       g = Graph()
-
+      
       s = BNode()
       g.add( (s, URIRef('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'), URIRef('http://schemas.talis.com/2006/bigfoot/configuration#JobRequest')) )
       g.add( (s, URIRef('http://www.w3.org/2000/01/rdf-schema#label'), Literal(label)) )
@@ -129,9 +125,9 @@ class Store:
       g.add( (s, URIRef('http://schemas.talis.com/2006/bigfoot/configuration#startTime'), Literal(time.strftime('%Y-%m-%dT%H:%M:%SZ') )) )
       if snapshot_uri is not None:
         g.add( (s, URIRef('http://schemas.talis.com/2006/bigfoot/configuration#snapshotUri'), URIRef(snapshot_uri)) )
-
+        
       body = g.serialize(format='xml')
-
+      
       #~ print body
       req_uri = self.build_uri("/jobs")
       return self.client.request(req_uri, "POST", body=body, headers={"accept" : "*/*", 'content-type':'application/rdf+xml'})
@@ -139,7 +135,7 @@ class Store:
     def schedule_reset(self, time=None, label='Reset data job created by pynappl client'):
       """Schedule an offline job to reset the data in a store"""
       return self.schedule_job(pynappl.JOB_TYPE_RESET, time, label)
-
+      
     def schedule_snapshot(self, time=None, label='Snapshot job created by pynappl client'):
       """Schedule an offline job to create a snapshot of the data in a store"""
       return self.schedule_job(pynappl.JOB_TYPE_SNAPSHOT, time, label)
@@ -151,14 +147,14 @@ class Store:
     def schedule_restore(self, snapshot_uri, time=None, label='Restore job created by pynappl client'):
       """Schedule an offline job to restore a snapshot to a store"""
       return self.schedule_job(pynappl.JOB_TYPE_RESTORE, time, label, snapshot_uri)
-
+      
     def read_job(self, uri, raw=False):
       (response, body) = self.client.request(uri, "GET", headers={"accept" : "application/rdf+xml"})
       if raw:
         return (response, body)
       else:
         return (response, pynappl.Job.parse(uri, body))
-
+      
     def is_writeable(self):
       req_uri = self.build_uri("/config/access-status")
       (response, body) = self.client.request(req_uri, "GET", headers={"accept" : "application/rdf+xml"}, )
@@ -232,7 +228,7 @@ class Store:
     def sparql(self, query):
       req_uri = self.build_uri("/services/sparql?query=" + urllib.quote_plus(query))
       return self.client.request(req_uri, "GET", headers={"accept" : "application/rdf+xml,application/sparql-results+xml"})
-
+    
     def ask(self, query, raw = False):
       response, body = self.sparql(query)
       if raw:
@@ -242,7 +238,7 @@ class Store:
         boolean = tree.find("{http://www.w3.org/2005/sparql-results#}boolean")
         return response, boolean.text == "true"
       return response, body
-
+    
     def select(self, query, raw = False):
       response, body = self.sparql(query)
       if raw:
@@ -283,17 +279,17 @@ class Store:
       if raw:
         return (response, body)
       else:
-        snapshot_list = []
+        snapshot_list = []  
         if response.status in range(200,300):
           g = Graph();
           g.parse(StringInputSource(body), format="xml")
           for snapshot_res in g.objects(subject = URIRef(self.uri), predicate = URIRef('http://schemas.talis.com/2006/bigfoot/configuration#snapshot')):
             snapshot_list.append(str(snapshot_res))
         return (response, snapshot_list)
-
+        
     def get_config(self):
       return pynappl.StoreConfig(self.build_uri("/config"))
-
+        
     def read_fpmap(self, raw=False):
       """Retrieve the field/predicate map (the first one if there are multiple)"""
       config = self.get_config()
@@ -311,7 +307,7 @@ class Store:
       config = self.get_config()
       fpmap_uri = config.get_first_fpmap_uri()
       return self.client.request(fpmap_uri, "PUT", body=fpmap.to_rdfxml(), headers={"accept" : "*/*", 'content-type':'application/rdf+xml'})
-
+        
     def read_query_profile(self, raw=False):
       """Retrieve the field/predicate map (the first one if there are multiple)"""
       config = self.get_config()

@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import time
 import readline
 import re
 import getpass
@@ -74,13 +75,17 @@ class CommandDispatcher(object):
       "http://purl.org/rss/1.0/title",
     ]
     self.uris = []
+    self.return_response = False
+    self.history = []
 
-  def __call__(self, words):
+  def __call__(self, words, line, add_to_history=True):
     if words:
       try:
         name = "handle_" + words[0].lower()
         if hasattr(self, name):
           getattr(self, name)(*words[1:])
+          if add_to_history:
+            self.history.append((words, line))
       except:
         traceback.print_exc()
 
@@ -88,7 +93,10 @@ class CommandDispatcher(object):
     while True:
       response, body = func(*args, **kwds)
       if response.status in range(200, 300):
-        return body
+        if self.return_response:
+          return response, body
+        else:
+          return body
       elif response.status == 401:
         print "Unauthorized"
         self.handle_login()
@@ -241,11 +249,6 @@ class CommandDispatcher(object):
   def handle_prefix(self, prefix, ns):
     self.prefixes[prefix] = self.geturi(ns)
 
-  def handle_list(self, what):
-    if what.lower() == "prefixes":
-      for prefix, ns in self.prefixes.iteritems():
-        print "%s: <%s>" % (prefix, ns)
-
   def handle_sparql(self, *queryparts):
     if self.store is None:
       self.handle_use()
@@ -343,6 +346,17 @@ class CommandDispatcher(object):
           print str(i) + ". " + d["class"]
           i += 1
           self.uris.append(d["class"])
+    elif what == "prefixes":
+      for prefix, ns in self.prefixes.iteritems():
+        print "%s: <%s>" % (prefix, ns)
+    elif what == "history":
+      i = 0
+      for words, line in self.history:
+        print "%d: %s" % (i, line)
+        i += 1
+    else:
+      print "Can't show %s" % what
+  handle_view = handle_list = handle_show
 
   def handle_count(self):
     if self.store is None:
@@ -350,6 +364,28 @@ class CommandDispatcher(object):
     results = self.execute(self.store.select, "SELECT (count(*) as ?count) WHERE {[] ?p [].}")
     if results:
       print "%s triples" % results[1][0]["count"]
+  
+  def handle_run(self, input):
+    if input.isdigit():
+      words, line = self.history[int(input)]
+      self(words, line, False)
+    else:
+      f = open(input, "r")
+      for line in f:
+        line = line.strip()
+        if line:
+          words = splitline(line)
+          self(words, line, False)
+      f.close()
+  
+  def handle_save(self, what, file):
+    if what == "history":
+      f = open(file, "w")
+      for words, line in self.history:
+        f.write(line + "\n")
+      f.close()
+    else:
+      print "Can't save %s" % what
 
   def handle_fpmap(self):
     if self.store is None:
@@ -359,7 +395,7 @@ class CommandDispatcher(object):
       modified = False
       while True:
         line = raw_input("fpmap%s> " % (modified and "*" or ""))
-        words = shlex.split(line)
+        words = splitline(line)
         cmd = words[0].lower()
         if cmd in ("exit", "quit"):
           if modified:
@@ -380,6 +416,7 @@ class CommandDispatcher(object):
         elif cmd == "remove":
           prop = self.geturi(words[1])
           fpmap.remove_mapping(prop)
+          modified = True
         elif cmd == "prefix":
           prefix = words[1]
           ns = self.geturi(words[2])
@@ -406,6 +443,80 @@ class CommandDispatcher(object):
 
   def handle_whereami(self):
     print "You're at:", self.pointer
+  
+  def schedule(self, func, *args):
+    self.return_response = True
+    response = self.execute(func, *args)
+    self.return_response = False
+    if response is not None:
+      response, body = response
+      loc = response["location"]
+      print "Job scheduled at '%s'" % loc
+      print "Waiting for job to complete"
+      while True:
+        time.sleep(5)
+        job = self.execute(self.store.read_job, loc)
+        if not job.has_started():
+          print "Job has not started"
+        elif job.has_completed():
+          print "Job finished"
+          return
+        else:
+          try:
+            update = job.progress_updates[-1]
+            print "Job in progress:", update.message
+          except IndexError:
+            print "Job in progress"
+  
+  def handle_reset(self):
+    if self.store is None:
+      self.handle_use()
+    self.schedule(self.store.schedule_reset)
+  
+  def handle_reindex(self):
+    if self.store is None:
+      self.handle_use()
+    self.schedule(self.store.schedule_reindex)
+  
+  def handle_snapshot(self):
+    if self.store is None:
+      self.handle_use()
+    self.schedule(self.store.schedule_snapshot)
+    snapshots = self.execute(self.store.snapshots)
+    snapshot_uri = snapshots[-1]
+    print "Snapshot is at '%s'" % snapshot_uri
+  
+  def handle_backup(self, filename):
+    if self.store is None:
+      self.handle_use()
+    job = self.schedule(self.store.schedule_snapshot)
+    snapshots = self.execute(self.store.snapshots)
+    snapshot_uri = snapshots[-1]
+    print "Downloading '%s' to '%s'" % (snapshot_uri, filename)
+    body = self.execute(self.client.request, snapshot_uri)
+    if body is not None:
+      f = open(filename, "wb")
+      f.write(body)
+      f.close()
+  
+  def handle_restore(self, uri):
+    if self.store is None:
+      self.handle_use()
+    if uri.startswith(("http://", "https://")):
+      self.schedule(self.store.schedule_restore, uri)
+    else:
+      print "To restore from a local file, it needs to be uploaded to the content box."
+      if raw_input("Continue? (y/n) ") == "y":
+        f = open(uri, "rb")
+        data = f.read()
+        f.close()
+        self.return_response = True
+        response = self.execute(self.client.request, self.store.build_uri("/items"), "POST", data)
+        self.return_response = False
+        if response is not None:
+          response, body = response
+          uri = response["location"]
+          self.schedule(self.store.schedule_restore, uri)
 
   def handle_help(self):
     print "Note: {uri} represents a URI delimited by angle brackets or a qname"
@@ -413,7 +524,7 @@ class CommandDispatcher(object):
     print "exit               - exit the shell"
     print "login              - prompt for username and password to use"
     print "use {storename}    - set storename to be the current store"
-    print "list prefixes      - show the current list of prefixes"
+    print "show prefixes      - show the current list of prefixes"
     print "prefix {p} {uri}   - map prefix p to the given URI"
     print "sample             - list 10 resources at random"
     print "sample {uri}       - list 10 resources with the given type"
@@ -426,11 +537,12 @@ class CommandDispatcher(object):
     print "sparql {query}     - execute a sparql query"
     print "search {query}     - execute a full text query"
     print "add {s} {p} {o}    - add a triple to the store"
-    print "remove {s} {p} {o} - remove a triple to the store"
+    print "remove {s} {p} {o} - remove a triple from the store"
     print "remove {s} {p}     - remove all triples with specified subject and predicate"
     print "remove {s}         - remove all triples with specified subject"
     print "remove {s} - {o}   - remove all triples with specified subject and object"
     print "remove - - {o}     - remove all triples with specified object"
+    print "fpmap              - start the field/predicate map editor"
 
 
 def main():
@@ -448,7 +560,7 @@ def main():
         line = line.strip()
         if line:
           words = splitline(line)
-          d(words)
+          d(words, line)
       f.close()
   else:
     while True:
@@ -456,7 +568,7 @@ def main():
       if line.lower() in ("exit", "quit"):
         return
       words = splitline(line)
-      d(words)
+      d(words, line)
 
 if __name__ == "__main__":
   main()
