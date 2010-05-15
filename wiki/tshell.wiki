@@ -186,6 +186,7 @@ We can continue exploring the data using the {{{describe}}} command:
     foaf:name "Sputnik 3" .
 
 >>> 
+}}}
 
 = Searching =
 
