@@ -1,8 +1,8 @@
-#summary One-sentence summary of this page.
+#summary a command line shell for the Talis Platform
 
 = Introduction =
 
-Add your content here.
+{{{pynappl}}} includes a simple command-line utility named {{{tshell}}} that allows the user to manually enter and execute  commands against the [http://www.talis.com/platform Talis Platform]. This document provides a brief introduction on how to use the tshell program. 
 
 
 = Details =
