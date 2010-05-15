@@ -9,16 +9,16 @@
 
 The {{{tshell}} program can be found in the {{{/bin}}} directory of the pynappl distribution. To start using {{{tshell}}} simply type the name of the program in the console:
 
-<code language="bash">
+{{{
 > ./tshell
 >>>
-</code>
+}}}
 
 = Exploring a Store =
 
 The Talis Platform is organised into areas called [http://n2.talis.com/wiki/Store stores] that group together data and services for accessing it. The majority of {{{tshell}}} commands act on a store.
 
-<code language="bash">
+{{{
 >>> use space
 >>> show classes
 0. http://rdfs.org/ns/void#Dataset
@@ -31,7 +31,7 @@ The Talis Platform is organised into areas called [http://n2.talis.com/wiki/Stor
 7. http://purl.org/net/schemas/space/Spacecraft
 8. http://xmlns.com/foaf/0.1/Image
 9. http://purl.org/ontology/po/Episode
-</code>
+}}}
 
 Add your content here.  Format your content with:
   * Text in *bold* or _italic_
