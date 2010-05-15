@@ -186,3 +186,39 @@ We can continue exploring the data using the {{{describe}}} command:
     foaf:name "Sputnik 3" .
 
 >>> 
+
+= Searching =
+
+As well as exploring a store using the {{{show classes}}}, {{{sample}}} and {{{describe}}} commands, {{{tshell}}} allows you to free text search the data in a store. The {{{search}}} command is used like this:
+
+{{{
+>>> search james
+0. STS 51C (http://nasa.dataincubator.org/spacecraft/1985-010A)
+1. Apollo 15 Command and Service Module (CSM) (http://nasa.dataincubator.org/spacecraft/1971-063A)
+2. STS 48 (http://nasa.dataincubator.org/spacecraft/1991-063A)
+3. James Benson Irwin (http://nasa.dataincubator.org/person/jamesbensonirwin)
+4. James Alton McDivitt (http://nasa.dataincubator.org/person/jamesaltonmcdivitt)
+5. Gemini 4 (http://nasa.dataincubator.org/spacecraft/1965-043A)
+6. James Arthur Lovell, Jr. (http://nasa.dataincubator.org/person/jamesarthurlovelljr)
+7. Apollo 13 Command and Service Module (CSM) (http://nasa.dataincubator.org/spacecraft/1970-029A)
+8. STS 41C (http://nasa.dataincubator.org/spacecraft/1984-034A)
+9. Apollo 9 (http://nasa.dataincubator.org/spacecraft/1969-018A)
+>>> 
+}}}
+
+Once again we have a numbered result list so we can {{{describe}}} any result on that list very simply:
+
+{{{
+>>> describe 6
+@prefix foaf: <http://xmlns.com/foaf/0.1/> .
+@prefix space: <http://purl.org/net/schemas/space/> .
+
+<http://nasa.dataincubator.org/person/jamesarthurlovelljr> a foaf:Person;
+    space:performed <http://nasa.dataincubator.org/mission/apollo-11/role/backup-commander>,
+        <http://nasa.dataincubator.org/mission/apollo-11/role/capsule-communicator/3>,
+        <http://nasa.dataincubator.org/mission/apollo-13/role/commander>,
+        <http://nasa.dataincubator.org/mission/apollo-8/role/command-module-pilot>;
+    foaf:name "James Arthur Lovell, Jr." .
+
+>>>
+}}}
