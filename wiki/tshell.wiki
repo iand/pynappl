@@ -16,10 +16,12 @@ The {{{tshell}} program can be found in the {{{/bin}}} directory of the pynappl 
 
 = Exploring a Store =
 
-The Talis Platform is organised into areas called [http://n2.talis.com/wiki/Store stores] that group together data and services for accessing it. The majority of {{{tshell}}} commands act on a store.
+The Talis Platform is organised into areas called [http://n2.talis.com/wiki/Store stores] that group together data and services for accessing it. The majority of {{{tshell}}} commands act on a store. You can set the active store with the {{{use}}} command. For example to set the active store to "space" (i.e. http://api.talis.com/stores/space):
 
 {{{
 >>> use space
+}}}
+
 >>> show classes
 0. http://rdfs.org/ns/void#Dataset
 1. http://purl.org/net/schemas/space/Discipline
