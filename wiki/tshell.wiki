@@ -452,11 +452,11 @@ Talis Platform stores support a number of [http://n2.talis.com/wiki/Job bulk ope
 
 {{{
 >>> snapshot
-Job scheduled at 'http://api.talis.com/stores/iand-dev3/jobs/aacb7f53-2bbb-4a55-b104-e64fb31a64e8'
+Job scheduled at 'http://api.talis.com/stores/mystore/jobs/aacb7f53-2bbb-4a55-b104-e64fb31a64e8'
 Waiting for job to complete
 Job in progress: Creating temporary files.
 Job finished
-Snapshot is at 'http://api.talis.com/stores/iand-dev3/snapshots/20100515143207.tar'
+Snapshot is at 'http://api.talis.com/stores/mystore/snapshots/20100515143207.tar'
 >>> 
 }}}
 
@@ -464,12 +464,12 @@ A related command is {{{backup}}} which performs a snapshot but also downloads i
 
 {{{
 >>> backup /tmp/backup.tar
-Job scheduled at 'http://api.talis.com/stores/iand-dev3/jobs/8e4a8eaf-0a54-4646-9cb1-b341705c80ab'
+Job scheduled at 'http://api.talis.com/stores/mystore/jobs/8e4a8eaf-0a54-4646-9cb1-b341705c80ab'
 Waiting for job to complete
 Job in progress: Creating temporary files.
 Job in progress: Setting the store to read write.
 Job finished
-Downloading 'http://api.talis.com/stores/iand-dev3/snapshots/20100515143416.tar' to '/tmp/backup.tar'
+Downloading 'http://api.talis.com/stores/mystore/snapshots/20100515143416.tar' to '/tmp/backup.tar'
 >>> 
 }}}
 
@@ -477,7 +477,7 @@ The {{{reset}}} command clears all of the data out of a store. It's probably bes
 
 {{{
 >>> reset
-Job scheduled at 'http://api.talis.com/stores/iand-dev3/jobs/ed77463d-8b42-4b36-be68-32e04a2023f5'
+Job scheduled at 'http://api.talis.com/stores/mystore/jobs/ed77463d-8b42-4b36-be68-32e04a2023f5'
 Waiting for job to complete
 Job in progress: Reset Data job running for store.
 Job finished
@@ -489,8 +489,8 @@ The {{{reindex}}} command request a reindex job be scheduled and run. This is ne
 The {{{restore}}} command restores a snapshot to the store. You need to supply the location of a valid snapshot to be restored. This can be a URI or it can be the filename of a local file. If you supply the latter {{{tshell}}} will upload the snapshot to the store's contentbox and perform the restore from there.
 
 {{{
->>> restore http://api.talis.com/stores/iand-dev3/snapshots/20100515143416.tar
-Job scheduled at 'http://api.talis.com/stores/iand-dev3/jobs/9ba448ab-2fc4-4da7-9688-b8ad52627432'
+>>> restore http://api.talis.com/stores/mystore/snapshots/20100515143416.tar
+Job scheduled at 'http://api.talis.com/stores/mystore/jobs/9ba448ab-2fc4-4da7-9688-b8ad52627432'
 Waiting for job to complete
 Job in progress: Checking if store exists.
 Job finished
@@ -499,7 +499,7 @@ Job finished
 >>> restore /tmp/backup.tar
 To restore from a local file, it needs to be uploaded to the content box.
 Continue? (y/n) y
-Job scheduled at 'http://api.talis.com/stores/iand-dev3/jobs/d839371f-5557-4f6d-8473-871f2ead70c3'
+Job scheduled at 'http://api.talis.com/stores/mystore/jobs/d839371f-5557-4f6d-8473-871f2ead70c3'
 Waiting for job to complete
 Job in progress: Checking if store exists.
 Job finished
