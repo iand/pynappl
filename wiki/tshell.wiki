@@ -41,3 +41,61 @@ The Talis Platform is organised into areas called [http://n2.talis.com/wiki/Stor
 >>>
 }}}
 
+Once you have a list of classes used in the store you can sample the data in that class using the {{{sample}}} command:
+
+{{{
+>>> sample <http://xmlns.com/foaf/0.1/Person>
+0. http://nasa.dataincubator.org/person/eugeneandrewcernan
+1. http://nasa.dataincubator.org/person/neilaldenarmstrong
+2. http://nasa.dataincubator.org/person/donnfultoneisele
+3. http://nasa.dataincubator.org/person/leroygordoncooperjr
+4. http://nasa.dataincubator.org/person/edgardeanmitchell
+5. http://nasa.dataincubator.org/person/charlesmossdukejr
+6. http://nasa.dataincubator.org/person/joehenryengle
+7. http://nasa.dataincubator.org/person/jackrobertlousma
+8. http://nasa.dataincubator.org/person/brucemccandlessii
+9. http://nasa.dataincubator.org/person/johnwattsyoung
+>>>
+}}}
+
+It can be a bit tedious to type out the full URI of a class so {{{tshell}}} lets you use prefixed names like this:
+
+{{{
+>>> sample foaf:Person
+0. http://nasa.dataincubator.org/person/eugeneandrewcernan
+1. http://nasa.dataincubator.org/person/neilaldenarmstrong
+2. http://nasa.dataincubator.org/person/donnfultoneisele
+3. http://nasa.dataincubator.org/person/leroygordoncooperjr
+4. http://nasa.dataincubator.org/person/edgardeanmitchell
+5. http://nasa.dataincubator.org/person/charlesmossdukejr
+6. http://nasa.dataincubator.org/person/joehenryengle
+7. http://nasa.dataincubator.org/person/jackrobertlousma
+8. http://nasa.dataincubator.org/person/brucemccandlessii
+9. http://nasa.dataincubator.org/person/johnwattsyoung
+>>>
+}}}
+
+{{{tshell}}} comes with an inbuilt set of prefix mapping. You can see them with the {{{list prefixes}}} command:
+
+{{{
+>>> list prefixes
+foaf: <http://xmlns.com/foaf/0.1/>
+owl: <http://www.w3.org/2002/07/owl#>
+xsd: <http://www.w3.org/2001/XMLSchema#>
+bibo: <http://purl.org/ontology/bibo/>
+rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+skos: <http://www.w3.org/2004/02/skos/core#>
+void: <http://rdfs.org/ns/void#>
+geonames: <http://www.geonames.org/ontology/>
+dc: <http://purl.org/dc/elements/1.1/>
+rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+rel: <http://purl.org/vocab/relationship/>
+dbp: <http://dbpedia.org/resource/>
+cs: <http://purl.org/vocab/changeset/schema#>
+ov: <http://open.vocab.org/terms/>
+dct: <http://purl.org/dc/terms/>
+rss: <http://purl.org/rss/1.0/>
+geo: <http://www.w3.org/2003/01/geo/wgs84_pos#>
+dbpo: <http://dbpedia.org/ontology/>
+>>>
+}}}
