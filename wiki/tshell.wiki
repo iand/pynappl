@@ -14,14 +14,19 @@ The {{{tshell}} program can be found in the {{{/bin}}} directory of the pynappl 
 >>>
 }}}
 
-= Exploring a Store =
-
 The Talis Platform is organised into areas called [http://n2.talis.com/wiki/Store stores] that group together data and services for accessing it. The majority of {{{tshell}}} commands act on a store. You can set the active store with the {{{use}}} command. For example to set the active store to "space" (i.e. http://api.talis.com/stores/space):
 
 {{{
 >>> use space
+>>>
 }}}
 
+= Exploring a Store =
+
+{{{tshell}} provides several utility commands for exploring the data in a store. These can be useful when you are unfamiliar with a store and want to discover what kind of data it contains. For example, you can see a list of the RDF classes used in the store's metabox:
+
+{{{
+>>> use space
 >>> show classes
 0. http://rdfs.org/ns/void#Dataset
 1. http://purl.org/net/schemas/space/Discipline
@@ -33,9 +38,6 @@ The Talis Platform is organised into areas called [http://n2.talis.com/wiki/Stor
 7. http://purl.org/net/schemas/space/Spacecraft
 8. http://xmlns.com/foaf/0.1/Image
 9. http://purl.org/ontology/po/Episode
+>>>
 }}}
 
-Add your content here.  Format your content with:
-  * Text in *bold* or _italic_
-  * Headings, paragraphs, and lists
-  * Automatic links to other wiki pages
