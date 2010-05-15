@@ -341,6 +341,7 @@ Unauthorized
 Username: user
 Password: ******
 >>>
+}}}
 
 **Note:** currently only RDF/XML is supported by the {{{store}}} command
 
