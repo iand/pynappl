@@ -260,3 +260,28 @@ Pioneer 1  |    http://nssdc.gsfc.nasa.gov/image/spacecraft/pioneer_able.gif
 >>> sparql ask where { ?launch space:launched "1969-07-16"^^xsd:date.}
 Yes
 >>> 
+}}}
+
+{{{
+>>> sparql construct { ?spacecraft foaf:name ?name; space:agency ?agency; 
+    space:mass ?mass. } where { ?launch space:launched "1969-07-16"^^xsd:date. 
+    ?spacecraft space:launch ?launch; foaf:name ?name; space:agency ?agency; 
+    space:mass ?mass. }
+@prefix foaf: <http://xmlns.com/foaf/0.1/> .
+@prefix space: <http://purl.org/net/schemas/space/> .
+
+<http://nasa.dataincubator.org/spacecraft/1969-059A> space:agency "United States";
+    space:mass "28801.0";
+    foaf:name "Apollo 11 Command and Service Module (CSM)" .
+
+<http://nasa.dataincubator.org/spacecraft/1969-059B> space:agency "United States";
+    space:mass "13300.0";
+    foaf:name "Apollo 11 SIVB" .
+
+<http://nasa.dataincubator.org/spacecraft/1969-059C> space:agency "United States";
+    space:mass "15065.0";
+    foaf:name "Apollo 11 Lunar Module / EASEP" .
+
+
+>>> 
+}}}
