@@ -223,3 +223,34 @@ Once again we have a numbered result list so we can {{{describe}}} any result on
 
 >>>
 }}}
+
+= SPARQL =
+
+{{{
+>>> sparql select * where {?s a  <http://xmlns.com/foaf/0.1/Person> . } limit 10
+                           s                            
+========================================================
+http://nasa.dataincubator.org/person/eugeneandrewcernan 
+http://nasa.dataincubator.org/person/neilaldenarmstrong 
+ http://nasa.dataincubator.org/person/donnfultoneisele  
+http://nasa.dataincubator.org/person/leroygordoncooperjr
+ http://nasa.dataincubator.org/person/edgardeanmitchell 
+ http://nasa.dataincubator.org/person/charlesmossdukejr 
+   http://nasa.dataincubator.org/person/joehenryengle   
+ http://nasa.dataincubator.org/person/jackrobertlousma  
+ http://nasa.dataincubator.org/person/brucemccandlessii 
+  http://nasa.dataincubator.org/person/johnwattsyoung   
+}}}
+
+
+{{{
+>>> sparql select ?name ?image where { ?spacecraft foaf:name ?name ; foaf:depiction ?image.} limit 5
+   name    |                               image                              
+===========+==================================================================
+Sputnik 1  |     http://nssdc.gsfc.nasa.gov/planetary/image/sputnik_asm.jpg   
+Sputnik 2  |    http://nssdc.gsfc.nasa.gov/image/spacecraft/sputnik2_vsm.jpg  
+Explorer 1 |     http://nssdc.gsfc.nasa.gov/image/spacecraft/explorer_1.gif   
+Vanguard 1 | http://nssdc.gsfc.nasa.gov/image/spacecraft/vanguard_1_rocket.jpg
+Pioneer 1  |    http://nssdc.gsfc.nasa.gov/image/spacecraft/pioneer_able.gif  
+>>> 
+}}}
