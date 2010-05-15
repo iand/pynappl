@@ -5,7 +5,14 @@
 {{{pynappl}}} includes a simple command-line utility named {{{tshell}}} that allows the user to manually enter and execute  commands against the [http://www.talis.com/platform Talis Platform]. This document provides a brief introduction on how to use the tshell program. 
 
 
-= Details =
+= Getting Started =
+
+The {{{tshell}} program can be found in the {{{/bin}}} directory of the pynappl distribution. To start using {{{tshell}}} simply type the name of the program in the console:
+
+<code language="bash">
+> ./tshell
+>>>
+</code>
 
 Add your content here.  Format your content with:
   * Text in *bold* or _italic_
