@@ -21,6 +21,13 @@ The Talis Platform is organised into areas called [http://n2.talis.com/wiki/Stor
 >>>
 }}}
 
+To exit the shell simply use the {{{exit}}} command:
+
+{{{
+>>> exit
+>
+}}}
+
 = Exploring a Store =
 
 {{{tshell}}} provides several utility commands for exploring the data in a store. These can be useful when you are unfamiliar with a store and want to discover what kind of data it contains. For example, you can see a list of the RDF classes used in the store's metabox:
@@ -314,9 +321,61 @@ It makes long and complex queries easier to manage:
 >>> 
 }}}
 
+= Storing RDF =
+
+{{{tshell}}} provides a {{{store}}} command for loading RDF data from your local filesystem into a store's metabox. Most stores are secured for writes so you will need to provide authentication details. You can do this using the {{{login}}} command:
+
+{{{
+>>> login
+Username: user
+Password: ******
+>>> 
+}}}
+
+This authentication lasts until you exit {{{tshell}}} or you use the {{{login}}} command. There is no logout command as yet. If you attempt an action that requires authentication, you will be prompted as part of that command:
+
+
+{{{
+>>> store /tmp/data.rdf
+Unauthorized
+Username: user
+Password: ******
+>>>
+
+**Note:** currently only RDF/XML is supported by the {{{store}}} command
 
 = Patching Data =
 
+As well as loading RDF into a store, {{{tshell}}} provides commands for making small changes to the data. The {{{add}}} command enables you to add a single triple to the store's metabox:
+
+{{{
+>>> add <http://example.com/jane> <http://xmlns.com/foaf/0.1/name> "Jane"
+>>> describe <http://example.com/jane>
+@prefix dir: <http://schemas.talis.com/2005/dir/schema#> .
+@prefix foaf: <http://xmlns.com/foaf/0.1/> .
+
+<http://example.com/jane>
+    dir:etag "db0d4985-ca5c-43b2-a88d-f968c5f71b1e";
+    foaf:name "Jane" .
+    
+>>> 
+}}}
+
+The {{{add}}} command also expands prefixed names just like the {{{sparql}}} command:
+
+
+{{{
+>>> add <http://example.com/jane> rdf:type foaf:Person
+>>> describe <http://example.com/jane>
+@prefix dir: <http://schemas.talis.com/2005/dir/schema#> .
+@prefix foaf: <http://xmlns.com/foaf/0.1/> .
+
+<http://example.com/jane> a foaf:Person
+    dir:etag "db0d4985-ca5c-43b2-a88d-f968c5f71b1e";
+    foaf:name "Jane" .
+    
+>>> 
+}}}
 
 = Store Management =
 
