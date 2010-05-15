@@ -156,3 +156,26 @@ The numbered shortcuts persist until a new results list is shown. So we can desc
 
 >>>
 }}}
+
+We can continue exploring the data using the {{{describe}}} command:
+
+>>> describe <http://nasa.dataincubator.org/spacecraft/1958-004B>
+@prefix dc: <http://purl.org/dc/elements/1.1/> .
+@prefix foaf: <http://xmlns.com/foaf/0.1/> .
+@prefix space: <http://purl.org/net/schemas/space/> .
+
+<http://nasa.dataincubator.org/spacecraft/1958-004B> a space:Spacecraft;
+    dc:description "Sputnik 3 was an automatic scientific laboratory spacecraft. It was conically-shaped and was 3.57 m long. The scientific instrumentation (twelve instruments) provided data on pressure and composition of the upper atmosphere, concentration of charged particles, photons in cosmic rays, heavy nuclei in cosmic rays, magnetic and electrostatic fields, and meteoric particles. The outer radiation belts of the Earth were detected during the flight. The spacecraft remained in orbit until April 6, 1960. ";
+    space:agency "U.S.S.R";
+    space:alternateName "00008";
+    space:discipline <http://nasa.dataincubator.org/discipline/astronomy>,
+        <http://nasa.dataincubator.org/discipline/earthscience>,
+        <http://nasa.dataincubator.org/discipline/lifescience>,
+        <http://nasa.dataincubator.org/discipline/spacephysics>;
+    space:internationalDesignator "1958-004B";
+    space:launch <http://nasa.dataincubator.org/launch/1958-004>;
+    space:mass "1327.0";
+    foaf:homepage <http://nssdc.gsfc.nasa.gov/database/MasterCatalog?sc=1958-004B>;
+    foaf:name "Sputnik 3" .
+
+>>> 
