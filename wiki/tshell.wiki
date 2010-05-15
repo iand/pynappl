@@ -226,6 +226,10 @@ Once again we have a numbered result list so we can {{{describe}}} any result on
 
 = SPARQL =
 
+{{{tshell}}} makes executing SPARQL queries very simple. The {{{sparql}}} command takes a single argument which is the SPARQL query to run. The one limitation is that the sparql query must be all on a single line. For clarity in the examples below, the sparql query is split over several lines but you should ensure they are all entered on a single line when you use the {{{sparql}}} command.
+
+For SPARQL select queries, the results are shown as a simple table:
+
 {{{
 >>> sparql select * where {?s a  <http://xmlns.com/foaf/0.1/Person> . } limit 10
                            s                            
@@ -242,6 +246,27 @@ http://nasa.dataincubator.org/person/leroygordoncooperjr
   http://nasa.dataincubator.org/person/johnwattsyoung   
 }}}
 
+SPARQL describe and construct queries show the results as turtle:
+
+{{{
+>>> sparql describe <http://nasa.dataincubator.org/person/johnwattsyoung>
+@prefix foaf: <http://xmlns.com/foaf/0.1/> .
+@prefix space: <http://purl.org/net/schemas/space/> .
+
+<http://nasa.dataincubator.org/person/johnwattsyoung> a foaf:Person;
+    space:performed <http://nasa.dataincubator.org/mission/apollo-10/role/command-module-pilot>,
+        <http://nasa.dataincubator.org/mission/apollo-13/role/backup-commander>,
+        <http://nasa.dataincubator.org/mission/apollo-13/role/capsule-communicator/3>,
+        <http://nasa.dataincubator.org/mission/apollo-16/role/commander>,
+        <http://nasa.dataincubator.org/mission/apollo-17/role/backup-commander>,
+        <http://nasa.dataincubator.org/mission/apollo-17/role/capsule-communicator/8>,
+        <http://nasa.dataincubator.org/mission/apollo-7/role/backup-command-module-pilot>,
+        <http://nasa.dataincubator.org/mission/apollo-7/role/capsule-communicator/4>;
+    foaf:name "John Watts Young" .
+>>> 
+}}}
+
+When you use the {{{sparql}}} command {{{tshell}}} will automatically expand prefixed URIs using your existing prefix mappings. That means you can write SPARQL queries very naturally like this:
 
 {{{
 >>> sparql select ?name ?image where { ?spacecraft foaf:name ?name ; foaf:depiction ?image.} limit 5
@@ -255,12 +280,15 @@ Pioneer 1  |    http://nssdc.gsfc.nasa.gov/image/spacecraft/pioneer_able.gif
 >>> 
 }}}
 
+This expansion of prefixes also works for datatypes:
 
 {{{
 >>> sparql ask where { ?launch space:launched "1969-07-16"^^xsd:date.}
 Yes
 >>> 
 }}}
+
+It makes long and complex queries easier to manage:
 
 {{{
 >>> sparql construct { ?spacecraft foaf:name ?name; space:agency ?agency; 
@@ -285,3 +313,20 @@ Yes
 
 >>> 
 }}}
+
+
+= Patching Data =
+
+
+= Store Management =
+
+= Configuring a Store =
+
+
+= Scripting =
+
+run
+
+save
+
+
