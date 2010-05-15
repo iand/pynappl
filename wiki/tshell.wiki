@@ -34,6 +34,9 @@ To exit the shell simply use the {{{exit}}} command:
 >
 }}}
 
+*Note:* in this document, lines prefixed with one angle bracket (>) indicate commands typed on your operating system's console, whereas lines prefixed with three angle brackets (>>>) indicate commands typed in {{{tshell}}}
+
+
 = Exploring a Store =
 
 {{{tshell}}} provides several utility commands for exploring the data in a store. These can be useful when you are unfamiliar with a store and want to discover what kind of data it contains. For example, you can see a list of the RDF classes used in the store's metabox:
@@ -349,7 +352,7 @@ Password: ******
 >>>
 }}}
 
-**Note:** currently only RDF/XML is supported by the {{{store}}} command
+*Note:* currently only RDF/XML is supported by the {{{store}}} command
 
 = Patching Data =
 
