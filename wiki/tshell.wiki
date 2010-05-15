@@ -91,7 +91,7 @@ It can be a bit tedious to type out the full URI of a class so {{{tshell}}} lets
 >>>
 }}}
 
-{{{tshell}}} comes with an inbuilt set of prefix mapping. You can see them with the {{{list prefixes}}} command:
+{{{tshell}}} comes with an inbuilt set of prefix mappings. You can see them with the {{{list prefixes}}} command:
 
 {{{
 >>> list prefixes
