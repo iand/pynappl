@@ -139,3 +139,20 @@ The {{{describe}}} command allows us to fetch the store's description of any res
 
 >>>
 }}}
+
+The numbered shortcuts persist until a new results list is shown. So we can describe item 5 on the list:
+
+{{{
+>>> describe 5
+@prefix space: <http://purl.org/net/schemas/space/> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+<http://nasa.dataincubator.org/launch/1958-004> a space:Launch;
+    space:launched "1958-05-15"^^xsd:date;
+    space:launchsite <http://nasa.dataincubator.org/launchsite/tyuratambaikonurcosmodrome>;
+    space:launchvehicle "Modified SS-6 (Sapwood)";
+    space:spacecraft <http://nasa.dataincubator.org/spacecraft/1958-004B> .
+
+
+>>>
+}}}
