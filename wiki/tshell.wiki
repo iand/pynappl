@@ -7,14 +7,14 @@
 
 = Getting Started =
 
-The {{{tshell}} program can be found in the {{{/bin}}} directory of the pynappl distribution. To start using {{{tshell}}} simply type the name of the program in the console:
+The {{{tshell}}} program can be found in the {{{/bin}}} directory of the pynappl distribution. To start using {{{tshell}}} simply type the name of the program in the console:
 
 {{{
 > ./tshell
 >>>
 }}}
 
-The Talis Platform is organised into areas called [http://n2.talis.com/wiki/Store stores] that group together data and services for accessing it. The majority of {{{tshell}}} commands act on a store. You can set the active store with the {{{use}}} command. For example to set the active store to "space" (i.e. http://api.talis.com/stores/space):
+The Talis Platform is organised into areas called [http://n2.talis.com/wiki/Store stores] that group together data and services for accessing it. The majority of {{{tshell}}} commands act on a store which you can set with the {{{use}}} command. For example to set the active store to "space" (i.e. http://api.talis.com/stores/space ):
 
 {{{
 >>> use space
@@ -23,7 +23,7 @@ The Talis Platform is organised into areas called [http://n2.talis.com/wiki/Stor
 
 = Exploring a Store =
 
-{{{tshell}} provides several utility commands for exploring the data in a store. These can be useful when you are unfamiliar with a store and want to discover what kind of data it contains. For example, you can see a list of the RDF classes used in the store's metabox:
+{{{tshell}}} provides several utility commands for exploring the data in a store. These can be useful when you are unfamiliar with a store and want to discover what kind of data it contains. For example, you can see a list of the RDF classes used in the store's metabox:
 
 {{{
 >>> use space
@@ -254,3 +254,9 @@ Vanguard 1 | http://nssdc.gsfc.nasa.gov/image/spacecraft/vanguard_1_rocket.jpg
 Pioneer 1  |    http://nssdc.gsfc.nasa.gov/image/spacecraft/pioneer_able.gif  
 >>> 
 }}}
+
+
+{{{
+>>> sparql ask where { ?launch space:launched "1969-07-16"^^xsd:date.}
+Yes
+>>> 
