@@ -99,3 +99,43 @@ geo: <http://www.w3.org/2003/01/geo/wgs84_pos#>
 dbpo: <http://dbpedia.org/ontology/>
 >>>
 }}}
+
+You can add your own prefixes with the {{{prefix}}} command. For example, we could add a prefix for the space vocabulary used by the space store like this:
+
+{{{
+>>> prefix space <http://purl.org/net/schemas/space/>
+>>>
+}}}
+
+Now we can sample the space launches:
+
+{{{
+>>> sample space:Launch
+0. http://nasa.dataincubator.org/launch/1957-001
+1. http://nasa.dataincubator.org/launch/1957-002
+2. http://nasa.dataincubator.org/launch/1958-001
+3. http://nasa.dataincubator.org/launch/1958-002
+4. http://nasa.dataincubator.org/launch/1958-003
+5. http://nasa.dataincubator.org/launch/1958-004
+6. http://nasa.dataincubator.org/launch/1958-005
+7. http://nasa.dataincubator.org/launch/1958-006
+8. http://nasa.dataincubator.org/launch/1958-007
+9. http://nasa.dataincubator.org/launch/1958-008
+>>>
+}}}
+
+The {{{describe}}} command allows us to fetch the store's description of any resource. Normally it is used with a URI in angle brackets just like the {{{sample}}} command earlier. You could also use a prefixed name if there is a suitable prefix for the URI. However, there is an even simpler method. You may have noticed that each result of the {{{sample}}} command is numbered. Whenever you see a numbered list in {{{tshell}}} you can use the number as a shortcut for the URI. So to fetch a description of http://nasa.dataincubator.org/launch/1958-001 we could type:
+
+{{{
+>>> describe 2
+@prefix space: <http://purl.org/net/schemas/space/> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+<http://nasa.dataincubator.org/launch/1958-001> a space:Launch;
+    space:launched "1958-02-01"^^xsd:date;
+    space:launchsite <http://nasa.dataincubator.org/launchsite/capecanaveral>;
+    space:launchvehicle "Jupiter C (Juno I)";
+    space:spacecraft <http://nasa.dataincubator.org/spacecraft/1958-001A> .
+
+>>>
+}}}
