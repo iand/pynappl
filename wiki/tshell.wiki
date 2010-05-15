@@ -159,6 +159,7 @@ The numbered shortcuts persist until a new results list is shown. So we can desc
 
 We can continue exploring the data using the {{{describe}}} command:
 
+{{{
 >>> describe <http://nasa.dataincubator.org/spacecraft/1958-004B>
 @prefix dc: <http://purl.org/dc/elements/1.1/> .
 @prefix foaf: <http://xmlns.com/foaf/0.1/> .
