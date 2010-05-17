@@ -169,6 +169,7 @@ class CommandDispatcher(object):
   def handle_store(self, filename):
     if self.store is None:
       self.handle_use()
+    print "Uploading '%s'" % filename
     self.execute(self.store.store_file, filename)
 
   def handle_describe(self, uri=None):
@@ -515,7 +516,7 @@ class CommandDispatcher(object):
       print "To restore from a local file, it needs to be uploaded to the content box."
       if raw_input("Continue? (y/n) ") == "y":
         f = open(uri, "rb")
-        data = f.read()
+        data = f.read() 
         f.close()
         self.return_response = True
         response = self.execute(self.client.request, self.store.build_uri("/items"), "POST", data)
