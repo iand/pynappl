@@ -276,6 +276,16 @@ class StoreDataTestCase(unittest.TestCase):
 		self.assertEqual(SINGLE_TRIPLE, body)
 
 
+	def test_store_data_with_content_type_sets_content_type(self):
+		client = MockHttp()
+		store = pynappl.Store('http://example.com/store', client=client)
+		resp = store.store_data(SINGLE_TRIPLE, content_type='text/turtle')
+
+		(headers, body) = client.get_request('post', 'http://example.com/store/meta')
+		self.assertTrue(headers.has_key('content-type'))
+		self.assertEqual('text/turtle', headers['content-type'])
+
+
 class StoreFileTestCase(unittest.TestCase):
 	def setUp(self):
 		self.file = tempfile.NamedTemporaryFile(delete=False)
@@ -349,6 +359,52 @@ class StoreFileTestCase(unittest.TestCase):
 
 		(headers, body) = client.get_request('post', 'http://example.com/store/meta/graphs/foo')
 		self.assertEqual(SINGLE_TRIPLE, body)
+    
+	def test_store_file_sets_content_type_from_filename(self):
+		file = tempfile.NamedTemporaryFile(delete=False, suffix='.rdf')
+		filename = file.name
+		file.write(SINGLE_TRIPLE)
+		file.close()
+
+		client = MockHttp()
+		store = pynappl.Store('http://example.com/store', client=client)
+		resp = store.store_file(filename)
+		os.remove(filename)
+
+		(headers, body) = client.get_request('post', 'http://example.com/store/meta')
+		self.assertTrue(headers.has_key('content-type'))
+		self.assertEqual('application/rdf+xml', headers['content-type'])
+    
+	def test_store_file_sets_content_type_from_filename_nt(self):
+		file = tempfile.NamedTemporaryFile(delete=False, suffix='.nt')
+		filename = file.name
+		file.write(SINGLE_TRIPLE)
+		file.close()
+    
+		client = MockHttp()
+		store = pynappl.Store('http://example.com/store', client=client)
+		resp = store.store_file(filename)
+		os.remove(filename)
+
+		(headers, body) = client.get_request('post', 'http://example.com/store/meta')
+		self.assertTrue(headers.has_key('content-type'))
+		self.assertEqual('text/turtle', headers['content-type'])
+
+	def test_store_file_sets_content_type_from_filename_ttl(self):
+		file = tempfile.NamedTemporaryFile(delete=False, suffix='.ttl')
+		filename = file.name
+		file.write(SINGLE_TRIPLE)
+		file.close()
+    
+		client = MockHttp()
+		store = pynappl.Store('http://example.com/store', client=client)
+		resp = store.store_file(filename)
+		os.remove(filename)
+
+		(headers, body) = client.get_request('post', 'http://example.com/store/meta')
+		self.assertTrue(headers.has_key('content-type'))
+		self.assertEqual('text/turtle', headers['content-type'])
+
 
 class StoreGraphTestCase(unittest.TestCase):
 	def setUp(self):

@@ -153,10 +153,11 @@ class CommandDispatcher(object):
         pass
     return g.qname(obj)
 
-  def handle_login(self, un=None):
+  def handle_login(self, un=None, pw=None):
     if not un:
       un = raw_input("Username: ")
-    pw = getpass.getpass("Password: ")
+    if not pw:
+      pw = getpass.getpass("Password: ")
     self.client.clear_credentials()
     self.client.add_credentials(un, pw)
 
@@ -472,16 +473,19 @@ class CommandDispatcher(object):
   def handle_reset(self):
     if self.store is None:
       self.handle_use()
+    print "Scheduling reset job for immediate execution"
     self.schedule(self.store.schedule_reset)
   
   def handle_reindex(self):
     if self.store is None:
       self.handle_use()
+    print "Scheduling reindex job for immediate execution"
     self.schedule(self.store.schedule_reindex)
   
   def handle_snapshot(self):
     if self.store is None:
       self.handle_use()
+    print "Scheduling snapshot job for immediate execution"
     self.schedule(self.store.schedule_snapshot)
     snapshots = self.execute(self.store.snapshots)
     snapshot_uri = snapshots[-1]
@@ -490,6 +494,7 @@ class CommandDispatcher(object):
   def handle_backup(self, filename):
     if self.store is None:
       self.handle_use()
+    print "Scheduling snapshot job for immediate execution"
     job = self.schedule(self.store.schedule_snapshot)
     snapshots = self.execute(self.store.snapshots)
     snapshot_uri = snapshots[-1]
@@ -504,6 +509,7 @@ class CommandDispatcher(object):
     if self.store is None:
       self.handle_use()
     if uri.startswith(("http://", "https://")):
+      print "Scheduling restore job for immediate execution"
       self.schedule(self.store.schedule_restore, uri)
     else:
       print "To restore from a local file, it needs to be uploaded to the content box."
