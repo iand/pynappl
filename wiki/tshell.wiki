@@ -352,7 +352,7 @@ Password: ******
 >>>
 }}}
 
-*Note:* currently only RDF/XML is supported by the {{{store}}} command
+*Note:* the type of data being stored is determined from the file extension. .nt and .ttl are uploaded as text/turtle.
 
 = Patching Data =
 
@@ -642,4 +642,17 @@ Now you can run the comand without needing to specify the {{{tshell}}} component
 {{{
 >>> save history /tmp/history.txt
 >>>
+}}}
+
+== Example Scripts ==
+
+This script backups up a store, resets it and then loads in some data:
+
+{{{
+#! /path/to/pynappl/bin/tshell
+use mystore
+login user password
+backup /path/to/backups/mystore-backup.tar
+reset
+store /path/to/data/mydata.ttl
 }}}
