@@ -45,7 +45,7 @@ class Store:
       self.uri = uri.endswith("/") and uri[:-1] or uri
       self.username = username
 
-    def store_data(self, data, graph_name=None):
+    def store_data(self, data, graph_name=None, content_type='application/rdf+xml'):
       """Store some RDF in the Metabox associated with this store. Default is to store the
          data in the metabox, but a private graph name can also be specified."""    
 
@@ -55,9 +55,9 @@ class Store:
       else:
         req_uri = self.build_uri("/meta/graphs/%s" % graph_name)  
       
-      return self.client.request(req_uri, "POST", body=data, headers={"accept" : "*/*", 'content-type':'application/rdf+xml'})
+      return self.client.request(req_uri, "POST", body=data, headers={"accept" : "*/*", 'content-type':content_type})
     
-    def store_file(self, filename, graph_name=None):
+    def store_file(self, filename, graph_name=None, content_type=None):
       """Store the contents of a File (file-like object) in the Metabox associated with this store
          The client does not support streaming submissions of data, so the stream will be fully read before data is submitted to the platform
          file:: an IO object      
@@ -65,12 +65,19 @@ class Store:
       file = open(filename, 'r')
       data = file.read()
       file.close()
-      return self.store_data(data, graph_name)
+      
+      if not content_type:
+        if filename.endswith('.nt') or filename.endswith('.ttl'):
+          content_type = 'text/turtle'
+        else:
+          content_type = 'application/rdf+xml'
+      
+      return self.store_data(data, graph_name, content_type)
 
     def store_graph(self, g, graph_name=None):
       """Store the contents of a Graph in the Metabox associated with this store"""
       data = g.serialize(format='xml')
-      return self.store_data(data, graph_name)
+      return self.store_data(data, graph_name,'application/rdf+xml')
 
     def store_url(self, url, graph_name=None):
       """Store the result of fetching a URL in the Metabox associated with this store"""
