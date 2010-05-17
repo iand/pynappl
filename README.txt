@@ -7,7 +7,7 @@ pynappl is a simple client library for the Talis Platform. It draws inspiration 
 
 At least the following (there may be more, this is alpha software under constant revision):
 
-* rdflib/2.5 - http://code.google.com/p/rdflib/
+* rdflib 3.0 - http://code.google.com/p/rdflib/
 * httplib2 - http://code.google.com/p/httplib2/
 
 == GETTING STARTED ==
