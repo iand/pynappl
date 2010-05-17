@@ -63,6 +63,7 @@ class CommandDispatcher(object):
       "dbpo": "http://dbpedia.org/ontology/",
       "rss": "http://purl.org/rss/1.0/",
       "geonames": "http://www.geonames.org/ontology/",
+      "dir": "http://schemas.talis.com/2005/dir/schema#",
     }
     self.title_props = [
       "http://www.w3.org/2004/02/skos/core#prefLabel",
@@ -181,7 +182,7 @@ class CommandDispatcher(object):
     if g:
       print g.serialize(format="turtle")
 
-  def handle_add(self, s, p, o, changeReason="", creatorName="TConsole"):
+  def handle_add(self, s, p, o, changeReason="", creatorName="tshell"):
     if self.store is None:
       self.handle_use()
     s = self.getval(s)
@@ -253,7 +254,6 @@ class CommandDispatcher(object):
     if self.store is None:
       self.handle_use()
     query = re.sub(r"\b([-_a-zA-Z0-9]+):([-_a-zA-Z0-9]+)\b", (lambda m: " <" + self.prefixes[m.group(1)] + m.group(2) + "> "), " ".join(queryparts))
-    print query
     cmd = query.split()[0].upper()
     if cmd == "SELECT":
       results = self.execute(self.store.select, query)
@@ -288,7 +288,8 @@ class CommandDispatcher(object):
       body = self.execute(self.store.sparql, query)
       if body:
         g = rdflib.ConjunctiveGraph()
-        g.parse(body)
+        self.bind_prefixes(g)
+        g.parse(StringIO.StringIO(body))
         print g.serialize(format="turtle")
 
   def handle_search(self, query):
