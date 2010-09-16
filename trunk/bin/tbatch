@@ -53,7 +53,7 @@ def main():
     error("directory not specified")
     
   store = pynappl.Store(store_uri, username, password)
-  manager = pynappl.RDFManager(store, dirname, traverse, "\.rdf$")
+  manager = pynappl.RDFManager(store, dirname, traverse, "\.(rdf|nt|ttl)$")
 
   if args[0] == "summary":
     print manager.summary()
