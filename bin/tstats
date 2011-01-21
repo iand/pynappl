@@ -1,0 +1,356 @@
+#!/usr/bin/env python
+
+import time
+import readline
+import re
+import getpass
+import httplib2
+import rdflib
+import pynappl
+import traceback
+import StringIO
+import optparse
+from rdflib.graph import Graph
+
+class StatCollector(object):
+  def __init__(self, storename, username, password, total_triples):
+    self.storename = storename
+    store_uri = "http://api.talis.com/stores/%s" % storename
+
+    store = pynappl.Store(store_uri, username, password)
+
+    self.store = store
+    self.total_triples = total_triples
+    self.triple_count = 0
+    self.resource_count = 0
+    self.literal_object_count = 0
+    self.lang_literal_object_count = 0
+    self.dt_literal_object_count = 0
+    self.resource_object_count = 0
+    self.class_queue = []
+    self.resource_queue = []
+    self.resources = {}
+    self.classes = {}
+    self.properties = {}
+    self.g = Graph()
+    self.uri_patterns = {}
+    self.stores = {}
+    self.languages = {}
+    self.datatypes = {}
+
+  def add_uri_regex(self, regex, storename):
+    if not storename in self.uri_patterns:
+      self.uri_patterns[storename] = []
+    self.uri_patterns[storename].append(regex)
+
+  def probe(self):
+    self.discover_types()
+    while len(self.class_queue) > 0 or len(self.resource_queue) > 0:
+      self.find_instances()
+      self.describe_instances()
+  
+    self.analyse_instances()
+    self.confirm_crosslinks()
+
+
+  def discover_types(self):
+    self.sample_type("SELECT ?s ?o WHERE {?s a ?o.} LIMIT 50")
+      
+
+  def sample_type(self, query):
+    print query
+    (response, body) = self.store.select(query)
+    if response.status in range(200, 300):
+      (headers, results) = body
+      for result in results:
+        if str(result['o']) not in self.classes:
+          self.classes[str(result['o'])] = { 'occurrence': 0 }
+          self.class_queue.append( str(result['o']) )
+          query  = "SELECT ?s ?o WHERE {"
+          query += "?s a ?o."
+          for class_uri in self.classes:
+            query += " FILTER (?o != <%s>)" % class_uri
+          
+          query += "} LIMIT 50"
+          self.sample_type(query)
+
+        if str(result['s']) not in self.resources:
+          self.resources[str(result['s'])] = { }
+          self.resource_queue.append( str(result['s']) )
+  
+  
+
+  def find_instances(self):
+    for class_uri in self.class_queue:
+      query = "SELECT ?s WHERE {?s a <%s> . } LIMIT 50" % class_uri
+      print query
+
+      (response, body) = self.store.select(query)
+      if response.status in range(200, 300):
+        (headers, results) = body
+        for result in results:
+          if str(result['s']) not in self.resources:
+            self.resources[str(result['s'])] = { }
+            self.resource_queue.append( str(result['s']) )
+
+    self.class_queue = []
+
+
+  def describe_instances(self):
+    for u in self.resource_queue:
+      query = "CONSTRUCT { <%s> ?p1 ?o . ?s ?p2 <%s> } {<%s> ?p1 ?o . OPTIONAL { ?s ?p2 <%s> FILTER (?p2 != <http://www.w3.org/1999/02/22-rdf-syntax-ns#type>)} }" % (u, u, u, u)
+      print query
+      (response, body) = self.store.sparql(query)
+      if response.status in range(200, 300):
+        self.resource_count += 1
+        self.g.parse(StringIO.StringIO(body))
+
+    self.resource_queue = []
+
+  def analyse_instances(self):
+    for (s, p, o) in self.g.triples((None, None, None)):
+      self.triple_count += 1
+      if p not in self.properties:
+        self.properties[p] = { 'occurrence' : 1 }
+      else:
+        self.properties[p]['occurrence'] += 1
+
+      matching_stores = self.find_stores(str(s))
+      for storename in matching_stores:
+        if storename != self.storename:
+          if storename not in self.stores:
+            self.stores[storename] = { 'occurrence' : 1, 'subjects' : [str(s)], 'objects' : [], 'confirmed_subjects' : [], 'confirmed_objects' : [] }
+          else:
+            self.stores[storename]['occurrence'] += 1
+            if str(s) not in self.stores[storename]['subjects']:
+              self.stores[storename]['subjects'].append(str(s))
+
+      if str(p) == "http://www.w3.org/1999/02/22-rdf-syntax-ns#type":
+        if str(o) not in self.classes:
+          self.classes[str(o)] = { 'occurrence':1}
+          self.class_queue.append( str(o) )
+        else:
+          self.classes[str(o)]['occurrence'] += 1
+      else:
+        if isinstance(o, rdflib.term.URIRef):
+          self.resource_object_count += 1
+          matching_stores = self.find_stores(str(o))
+          for storename in matching_stores:
+            if storename != self.storename:
+              if storename not in self.stores:
+                self.stores[storename] = { 'occurrence' : 1, 'subjects' : [], 'objects' : [str(o)], 'confirmed_subjects' : [], 'confirmed_objects' : [] }
+              else:
+                self.stores[storename]['occurrence'] += 1
+                if str(o) not in self.stores[storename]['objects']:
+                  self.stores[storename]['objects'].append(str(o))
+        else:
+          self.literal_object_count += 1
+          if o.language:
+            self.lang_literal_object_count += 1
+            if o.language not in self.languages:
+              self.languages[o.language] = 1
+            else:
+              self.languages[o.language] += 1
+          if o.datatype:
+            self.dt_literal_object_count += 1
+            if o.datatype not in self.datatypes:
+              self.datatypes[o.datatype] = 1
+            else:
+              self.datatypes[o.datatype] += 1
+        
+    
+    
+  def find_stores(self, uri):
+    matching_stores = []
+    for storename in self.uri_patterns:
+      for pattern in self.uri_patterns[storename]:
+          if re.search(pattern, uri):
+            matching_stores.append(storename)
+    
+    return matching_stores
+
+  
+  def confirm_crosslinks(self):
+    for storename in self.stores:
+      conf_store = pynappl.Store("http://api.talis.com/stores/%s" % storename)
+      for resource in self.stores[storename]['subjects']:
+        query = "ASK WHERE {<%s> ?p ?o . }" % resource
+        print query
+
+        (response, body) = conf_store.ask(query)
+        if response.status in range(200, 300):
+          if body:
+            self.stores[storename]['confirmed_subjects'].append(resource)
+    
+      for resource in self.stores[storename]['objects']:
+        query = "ASK WHERE {<%s> ?p ?o . }" % resource
+        print query
+
+        (response, body) = conf_store.ask(query)
+        if response.status in range(200, 300):
+          if body:
+            self.stores[storename]['confirmed_objects'].append(resource)
+
+  def report(self):
+
+    print "SAMPLE INFORMATION"
+    print "------------------"
+    print "Store analysed: %s" % self.storename
+    print "Total resources analysed: %s" % self.resource_count
+    print "Total triples analysed: %s" % self.triple_count
+
+    print ""
+    print "GENERAL STATISTICS"
+    print "------------------"
+    if self.resource_count > 0:
+      print "Average triples per resource: %1.2f" % ((1.0 * self.triple_count) / self.resource_count)
+    print "%s (%1.2f%%) triple objects were resources, %s (%1.2f%%) were literals" % (self.resource_object_count, 100.0 * self.resource_object_count / (self.resource_object_count + self.literal_object_count), self.literal_object_count, 100.0 * self.literal_object_count / (self.resource_object_count + self.literal_object_count) )
+    
+    print "%s (%1.2f%%) literals had languages" % (self.lang_literal_object_count, 100.0 * self.lang_literal_object_count / self.literal_object_count)
+    if len(self.languages.keys()) > 0:
+      print "%s different languages were found: %s" % (len(self.languages.keys()))
+      for language in self.languages:
+        print "  %s (%s triples)" % (language, self.languages[language])
+
+    print "%s (%1.2f%%) literals had datatypes" % (self.dt_literal_object_count, 100.0 * self.dt_literal_object_count / self.literal_object_count)
+    if len(self.datatypes.keys()) > 0:
+      print "%s different datatypes were found:" % (len(self.datatypes.keys()))
+      for datatype in self.datatypes:
+        print "  %s (%s triples)" % (datatype, self.datatypes[datatype])
+
+
+    print ""
+    print "VOCABULARY USAGE"
+    print "----------------"
+    print "The following %s classes were found in use" % (len(self.classes.keys()))
+    for class_uri in self.classes:
+      print "  %s (%s triples)" % (class_uri, self.classes[class_uri]['occurrence'])
+
+    print ""
+    print "The following %s properties were found in use" % (len(self.properties.keys()))
+    for property_uri in self.properties:
+      print "  %s (%s triples)" % (property_uri, self.properties[property_uri]['occurrence'])
+
+    print ""
+    print "INTERLINKING"
+    print "------------"
+    for storename in self.stores:
+      print "Interlinks to '%s' store" % (storename)
+      
+      print "  Found %s triples (%1.2f%%) that potentially referenced data held in '%s' store:" % (self.stores[storename]['occurrence'], 100.0 * self.stores[storename]['occurrence'] / self.triple_count,  storename)
+
+      print ""
+      print "  %s (%1.2f%%) unique resources found in the subject position"% (len(self.stores[storename]['subjects']), 100.0 * len(self.stores[storename]['subjects']) / self.resource_count)
+      if len(self.stores[storename]['subjects']) > 0:
+        print "  The following %s (%1.2f%%) resources were confirmed to exist in the '%s' store"% (len(self.stores[storename]['confirmed_subjects']), 100.0 * len(self.stores[storename]['confirmed_subjects']) / len(self.stores[storename]['subjects']), storename)
+        for uri in self.stores[storename]['confirmed_subjects']:
+          print "    %s" % uri
+
+      print ""
+      print "  %s (%1.2f%%) unique resources found in the object position"% (len(self.stores[storename]['objects']), 100.0 * len(self.stores[storename]['objects']) / self.resource_count)
+      if len(self.stores[storename]['objects']) > 0:
+        print "  The following %s (%1.2f%%) resources were confirmed to exist in the '%s' store"% (len(self.stores[storename]['confirmed_objects']), 100.0 * len(self.stores[storename]['confirmed_objects']) / len(self.stores[storename]['objects']), storename )
+        for uri in self.stores[storename]['confirmed_objects']:
+          print "    %s" % uri
+
+      print ""
+
+def main():
+  p = optparse.OptionParser()
+  p.add_option("-u", "--username", action="store", dest="username", metavar="USERNAME", help="login in as USERNAME")
+  p.add_option("-p", "--password", action="store", dest="password", metavar="PASSWORD", help="login in with PASSWORD")
+  p.add_option("-s", "--storename", action="store", dest="storename", metavar="STORENAME", help="name of store")
+  opts, args = p.parse_args()
+
+  
+  s = StatCollector(opts.storename, opts.username, opts.password, 500000000)
+
+
+  s.add_uri_regex('^http://semanticlibrary.org/', 'semlib-dev1')
+  s.add_uri_regex('^http://iandavis.com/id/', 'iand')
+  s.add_uri_regex('^http://dbpedia.org/resource/', 'dbpedia')
+  s.add_uri_regex('^http://musicbrainz.dataincubator.org/', 'musicbrainz')
+  s.add_uri_regex('^http://discogs.dataincubator.org/', 'discogs')
+  s.add_uri_regex('^http://pokedex.dataincubator.org/', 'pokedex') 
+  s.add_uri_regex('^http://nasa.dataincubator.org/', 'space')
+  s.add_uri_regex('^http://openlibrary.org/', 'openlibrary')
+  s.add_uri_regex('^http://www.johngoodwin.me.uk/family/', 'jgoodwin-genealogy')
+  s.add_uri_regex('^http://ons.dataincubator.org/', 'ons')
+  s.add_uri_regex('^http://periodicals.dataincubator.org/', 'periodicals')
+  s.add_uri_regex('^http://oecd.dataincubator.org/', 'iand-dev1')
+  s.add_uri_regex('^http://climb.dataincubator.org/', 'kwijibo-dev2')
+  s.add_uri_regex('^http://www.bbc.co.uk/programmes/', 'bbc-backstage')
+  s.add_uri_regex('^http://www.bbc.co.uk/music/', 'bbc-backstage')
+  s.add_uri_regex('^http://www.bbc.co.uk/nature/', 'bbc-wildlife')
+  s.add_uri_regex('^http://lcsubjects.org/', 'lcsh-info')
+  s.add_uri_regex('^http://lists.broadminsteruniversity.org/', 'zephyr-live-broadminster3')
+  s.add_uri_regex('^http://ckan.net/', 'ckan')
+  s.add_uri_regex('^http://moseley.dataincubator.org/', 'moseley')
+  s.add_uri_regex('^http://airports.dataincubator.org/', 'airports')
+  s.add_uri_regex('^http://data.ordnancesurvey.co.uk/', 'ordnance-survey')
+  s.add_uri_regex('^http://bl.dataincubator.org/', 'bl-dev1')
+  s.add_uri_regex('^http://analytics.data.gov.uk/', 'govuk-analytics')
+  s.add_uri_regex('^http://business.data.gov.uk/', 'govuk-business')
+  s.add_uri_regex('^http://crime.data.gov.uk/', 'govuk-crime')
+  s.add_uri_regex('^http://culture.data.gov.uk/', 'govuk-culture')
+  s.add_uri_regex('^http://datasets.data.gov.uk/', 'govuk-datasets')
+  s.add_uri_regex('^http://statistics.data.gov.uk/', 'govuk-statistics')
+  s.add_uri_regex('^http://statistics.data.gov.uk/', 'govuk-education')
+  s.add_uri_regex('^http://economy.data.gov.uk/', 'govuk-economy')
+  s.add_uri_regex('^http://education.data.gov.uk/', 'govuk-education')
+  s.add_uri_regex('^http://finance.data.gov.uk/', 'govuk-finance')
+  s.add_uri_regex('^http://geo.data.gov.uk/', 'govuk-geo')
+  s.add_uri_regex('^http://health.data.gov.uk/', 'govuk-health')
+  s.add_uri_regex('^http://international-aid.data.gov.uk/', 'govuk-international-aid')
+  s.add_uri_regex('^http://justice.data.gov.uk/', 'govuk-justice')
+  s.add_uri_regex('^http://legislation.data.gov.uk/', 'govuk-legislation')
+  s.add_uri_regex('^http://transport.data.gov.uk/', 'transport')
+  s.add_uri_regex('^http://local-government.data.gov.uk/', 'govuk-local-government')
+  s.add_uri_regex('^http://notices.data.gov.uk/', 'govuk-notices')
+  s.add_uri_regex('^http://people.data.gov.uk/', 'govuk-people')
+  s.add_uri_regex('^http://science.data.gov.uk/', 'govuk-science')
+  s.add_uri_regex('^http://data.nytimes.com/', 'nytimes')
+
+  s.add_uri_regex('^http://sws.geonames.org/', 'geonames')
+
+  s.add_uri_regex('^http://purl.org/vocabularies/princeton/wn30/', 'wordnet')
+  s.add_uri_regex('^http://linkedgeodata.org/', 'linkedgeodata')
+
+  s.add_uri_regex('^http://api.talis.com/stores/engagetenant18/items', 'engagetenant18')
+
+  s.add_uri_regex('^http://www.london-gazette.co.uk/', 'datagovuk')
+  s.add_uri_regex('^http://www.gazettes-online.co.uk/', 'datagovuk') 
+  s.add_uri_regex('^http://guardian.dataincubator.org/', 'guardian')
+
+  s.add_uri_regex('^http://www4.wiwiss.fu-berlin.de/factbook/resource/', 'cia-factbook')
+
+  s.add_uri_regex('^http://kierdavis.com/', 'kier-dev3')
+  s.add_uri_regex('^http://open.vocab.org/terms', 'openvocab')
+  s.add_uri_regex('^http://purl.org/dc/', 'schema-cache')
+  s.add_uri_regex('^http://purl.org/goodrelations/v1#', 'schema-cache')
+  s.add_uri_regex('^http://purl.org/ontology/mo/', 'schema-cache')
+  s.add_uri_regex('^http://purl.org/vocab/', 'schema-cache')
+  s.add_uri_regex('^http://www.w3.org/2002/07/owl#', 'schema-cache')
+  s.add_uri_regex('^http://www.w3.org/2004/02/skos/core#', 'schema-cache')
+  s.add_uri_regex('^http://xmlns.com/foaf/0.1/', 'schema-cache')
+  s.add_uri_regex('^http://www.w3.org/2004/02/skos/core#', 'schema-cache')
+  s.add_uri_regex('^http://purl.org/goodrelations/v1#', 'schema-cache')
+#  s.add_uri_regex('^http://uberblic.org/resource/', 'uberblic')
+  s.add_uri_regex('^http://purl.org/NET/lccn/', 'rsinger-dev4')
+  s.add_uri_regex('^http://iandavis.com/orlanth', 'iand-dev5')
+  s.add_uri_regex('^http://example.com/chow', 'orlanth-data1')
+  s.add_uri_regex('^http://dbpedia.org/resource', 'near')
+  s.add_uri_regex('^http://rdfize.com/geo/', 'near')
+  s.add_uri_regex('^http://education.data.gov.uk/id/', 'near')
+  s.add_uri_regex('^http://transport.data.gov.uk/id/', 'near')
+  s.add_uri_regex('^http://products.semweb.bestbuy.com', 'orlanth-data9')
+
+
+
+
+
+  s.probe()
+  s.report()
+
+if __name__ == "__main__":
+  main()

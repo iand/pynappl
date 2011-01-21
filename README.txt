@@ -12,6 +12,10 @@ At least the following (there may be more, this is alpha software under constant
 
 == GETTING STARTED ==
 
+Install rdflib 3.0 using easy_install:
+
+sudo easy_install -U "rdflib>=3.0.0"
+
 Edit ~/.bashrc and add
 
 export PYTHONPATH=$PYTHONPATH:/<path to pynappl>/src

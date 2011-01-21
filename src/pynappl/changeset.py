@@ -43,6 +43,9 @@ class ChangeSet(rdflib.ConjunctiveGraph):
 		self._add((stmt, RDF.object, obj))
 		return stmt
 
+
+
+
 class BatchChangeSet(object):
 	def __init__(self):
 		self.changesets = {}
@@ -94,3 +97,19 @@ class BatchChangeSet(object):
 				g.bind("cs", CS)
 		if len(g):
 			yield g
+
+	def diff(self, old, new, prop_whitelist = [], prop_blacklist = []):
+		has_changes = False
+		for (s,p,o) in old.triples((None, None, None)):
+			if str(p) not in prop_blacklist and (len(prop_whitelist) == 0 or str(p) in prop_whitelist):
+				if ((s,p,o) not in new):
+					self.remove(s, p, o)
+					has_changes = True
+		
+		for (s,p,o) in new.triples((None, None, None)):
+			if str(p) not in prop_blacklist and (len(prop_whitelist) == 0 or str(p) in prop_whitelist):
+				if ((s,p,o) not in old):
+					self.add(s, p, o)
+					has_changes = True
+
+		return has_changes
