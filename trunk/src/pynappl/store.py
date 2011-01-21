@@ -88,6 +88,19 @@ class Store:
       return self.store_data(body, graph_name)
 
 
+    def apply_changeset(self, data, graph_name=None, content_type='application/vnd.talis.changeset+xml'):
+      """Store some RDF in the Metabox associated with this store. Default is to store the
+         data in the metabox, but a private graph name can also be specified."""    
+
+      req_uri = None
+      if graph_name is None:
+        req_uri = self.build_uri("/meta")
+      else:
+        req_uri = self.build_uri("/meta/graphs/%s" % graph_name)  
+      
+      return self.client.request(req_uri, "POST", body=data, headers={"accept" : "*/*", 'content-type':content_type})
+
+
     def build_uri(self, uri):
       """Build a request uri, by concatenating it with the base uri of the store
           uri:: relative URI to store service, e.g. "/service/sparql"
