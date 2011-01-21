@@ -11,6 +11,9 @@ import traceback
 import StringIO
 import optparse
 from rdflib.graph import Graph
+from rdflib.term import URIRef, BNode
+
+from operator import itemgetter
 
 class StatCollector(object):
   def __init__(self, storename, username, password, total_triples):
@@ -38,6 +41,10 @@ class StatCollector(object):
     self.languages = {}
     self.datatypes = {}
 
+    self.internal_triples = 0
+    self.interlinking_triples = 0
+    self.external_triples = 0
+
   def add_uri_regex(self, regex, storename):
     if not storename in self.uri_patterns:
       self.uri_patterns[storename] = []
@@ -45,6 +52,7 @@ class StatCollector(object):
 
   def probe(self):
     self.discover_types()
+    self.get_sameas()
     while len(self.class_queue) > 0 or len(self.resource_queue) > 0:
       self.find_instances()
       self.describe_instances()
@@ -64,7 +72,7 @@ class StatCollector(object):
       (headers, results) = body
       for result in results:
         if str(result['o']) not in self.classes:
-          self.classes[str(result['o'])] = { 'occurrence': 0 }
+          self.classes[str(result['o'])] = { 'occurrence': 0, 'properties' : {} }
           self.class_queue.append( str(result['o']) )
           query  = "SELECT ?s ?o WHERE {"
           query += "?s a ?o."
@@ -95,6 +103,21 @@ class StatCollector(object):
 
     self.class_queue = []
 
+  def get_sameas(self):
+    query = "SELECT ?s ?o WHERE {?s <http://www.w3.org/2002/07/owl#sameAs> ?o . } LIMIT 50"
+    print query
+
+    (response, body) = self.store.select(query)
+    if response.status in range(200, 300):
+      (headers, results) = body
+      for result in results:
+        if str(result['s']) not in self.resources:
+          self.resources[str(result['s'])] = { }
+          self.resource_queue.append( str(result['s']) )
+        if str(result['o']) not in self.resources:
+          self.resources[str(result['o'])] = { }
+          self.resource_queue.append( str(result['o']) )
+
 
   def describe_instances(self):
     for u in self.resource_queue:
@@ -115,8 +138,8 @@ class StatCollector(object):
       else:
         self.properties[p]['occurrence'] += 1
 
-      matching_stores = self.find_stores(str(s))
-      for storename in matching_stores:
+      subject_stores = self.find_stores(str(s))
+      for storename in subject_stores:
         if storename != self.storename:
           if storename not in self.stores:
             self.stores[storename] = { 'occurrence' : 1, 'subjects' : [str(s)], 'objects' : [], 'confirmed_subjects' : [], 'confirmed_objects' : [] }
@@ -127,15 +150,15 @@ class StatCollector(object):
 
       if str(p) == "http://www.w3.org/1999/02/22-rdf-syntax-ns#type":
         if str(o) not in self.classes:
-          self.classes[str(o)] = { 'occurrence':1}
+          self.classes[str(o)] = { 'occurrence':1, 'properties' : {}}
           self.class_queue.append( str(o) )
         else:
           self.classes[str(o)]['occurrence'] += 1
       else:
         if isinstance(o, rdflib.term.URIRef):
           self.resource_object_count += 1
-          matching_stores = self.find_stores(str(o))
-          for storename in matching_stores:
+          object_stores = self.find_stores(str(o))
+          for storename in object_stores:
             if storename != self.storename:
               if storename not in self.stores:
                 self.stores[storename] = { 'occurrence' : 1, 'subjects' : [], 'objects' : [str(o)], 'confirmed_subjects' : [], 'confirmed_objects' : [] }
@@ -143,6 +166,18 @@ class StatCollector(object):
                 self.stores[storename]['occurrence'] += 1
                 if str(o) not in self.stores[storename]['objects']:
                   self.stores[storename]['objects'].append(str(o))
+                  
+          if self.storename in object_stores:
+            if self.storename in subject_stores:
+              self.internal_triples += 1
+            else:
+              self.interlinking_triples += 1
+          else:
+            if self.storename in subject_stores:
+              self.interlinking_triples += 1
+            else:
+              self.external_triples += 1
+              
         else:
           self.literal_object_count += 1
           if o.language:
@@ -158,6 +193,23 @@ class StatCollector(object):
             else:
               self.datatypes[o.datatype] += 1
         
+          if self.storename in subject_stores:
+            self.internal_triples += 1
+          else:
+            self.external_triples += 1
+
+    for class_uri in self.classes:
+      properties = {}
+      
+      for (s, p, o) in self.g.triples((None, URIRef('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'), URIRef(class_uri))):
+        for (s1, p1, o1) in self.g.triples((s, None, None)):
+          if str(p1) != "http://www.w3.org/1999/02/22-rdf-syntax-ns#type":
+            if str(p1) not in properties:
+              properties[str(p1)] = 1
+            else:
+              properties[str(p1)] += 1
+              
+      self.classes[class_uri]['properties'] = properties
     
     
   def find_stores(self, uri):
@@ -193,67 +245,98 @@ class StatCollector(object):
 
   def report(self):
 
-    print "SAMPLE INFORMATION"
-    print "------------------"
-    print "Store analysed: %s" % self.storename
-    print "Total resources analysed: %s" % self.resource_count
-    print "Total triples analysed: %s" % self.triple_count
 
-    print ""
-    print "GENERAL STATISTICS"
-    print "------------------"
+    r = '';
+    r +=  "SAMPLE INFORMATION\n"
+    r +=  "------------------\n"
+    r +=  "Store analysed: %s\n" % self.storename
+    r +=  "Total resources analysed: %s\n" % self.resource_count
+    r +=  "Total triples analysed: %s\n" % self.triple_count
+
+    r +=  "\n"
+    r +=  "GENERAL STATISTICS\n"
+    r +=  "------------------\n"
     if self.resource_count > 0:
-      print "Average triples per resource: %1.2f" % ((1.0 * self.triple_count) / self.resource_count)
-    print "%s (%1.2f%%) triple objects were resources, %s (%1.2f%%) were literals" % (self.resource_object_count, 100.0 * self.resource_object_count / (self.resource_object_count + self.literal_object_count), self.literal_object_count, 100.0 * self.literal_object_count / (self.resource_object_count + self.literal_object_count) )
-    
-    print "%s (%1.2f%%) literals had languages" % (self.lang_literal_object_count, 100.0 * self.lang_literal_object_count / self.literal_object_count)
-    if len(self.languages.keys()) > 0:
-      print "%s different languages were found: %s" % (len(self.languages.keys()))
-      for language in self.languages:
-        print "  %s (%s triples)" % (language, self.languages[language])
-
-    print "%s (%1.2f%%) literals had datatypes" % (self.dt_literal_object_count, 100.0 * self.dt_literal_object_count / self.literal_object_count)
-    if len(self.datatypes.keys()) > 0:
-      print "%s different datatypes were found:" % (len(self.datatypes.keys()))
-      for datatype in self.datatypes:
-        print "  %s (%s triples)" % (datatype, self.datatypes[datatype])
-
-
-    print ""
-    print "VOCABULARY USAGE"
-    print "----------------"
-    print "The following %s classes were found in use" % (len(self.classes.keys()))
-    for class_uri in self.classes:
-      print "  %s (%s triples)" % (class_uri, self.classes[class_uri]['occurrence'])
-
-    print ""
-    print "The following %s properties were found in use" % (len(self.properties.keys()))
-    for property_uri in self.properties:
-      print "  %s (%s triples)" % (property_uri, self.properties[property_uri]['occurrence'])
-
-    print ""
-    print "INTERLINKING"
-    print "------------"
-    for storename in self.stores:
-      print "Interlinks to '%s' store" % (storename)
+      r +=  "Average triples per resource: %1.2f\n" % ((1.0 * self.triple_count) / self.resource_count)
       
-      print "  Found %s triples (%1.2f%%) that potentially referenced data held in '%s' store:" % (self.stores[storename]['occurrence'], 100.0 * self.stores[storename]['occurrence'] / self.triple_count,  storename)
+    r +=  "%s (%1.2f%%) triple objects were resources, %s (%1.2f%%) were literals\n" % (self.resource_object_count, 100.0 * self.resource_object_count / (self.resource_object_count + self.literal_object_count), self.literal_object_count, 100.0 * self.literal_object_count / (self.resource_object_count + self.literal_object_count) )
+      
+      
+    
+    r +=  "%s (%1.2f%%) literals had languages\n" % (self.lang_literal_object_count, 100.0 * self.lang_literal_object_count / self.literal_object_count)
+    if len(self.languages.keys()) > 0:
+      r +=  "%s different languages were found:\n" % (len(self.languages.keys()))
+      for language in self.languages:
+        r +=  "  %s (%s triples)\n" % (language, self.languages[language])
 
-      print ""
-      print "  %s (%1.2f%%) unique resources found in the subject position"% (len(self.stores[storename]['subjects']), 100.0 * len(self.stores[storename]['subjects']) / self.resource_count)
+    r +=  "%s (%1.2f%%) literals had datatypes\n" % (self.dt_literal_object_count, 100.0 * self.dt_literal_object_count / self.literal_object_count)
+    if len(self.datatypes.keys()) > 0:
+      r +=  "%s different datatypes were found:\n" % (len(self.datatypes.keys()))
+      for datatype in self.datatypes:
+        r +=  "  %s (%s triples)\n" % (datatype, self.datatypes[datatype])
+
+
+    r +=  "\n"
+    r +=  "VOCABULARY USAGE\n"
+    r +=  "----------------\n"
+    r +=  "The following %s classes were found in use\n" % (len(self.classes.keys()))
+    for class_uri in self.classes:
+      r +=  "  %s (%s triples)\n" % (class_uri, self.classes[class_uri]['occurrence'])
+
+    r +=  "\n"
+    r +=  "The following %s properties were found in use\n" % (len(self.properties.keys()))
+    for property_uri in self.properties:
+      r +=  "  %s (%s triples)\n" % (property_uri, self.properties[property_uri]['occurrence'])
+
+
+    r += "\n"
+
+    for class_uri in self.classes:
+      if (len(self.classes[class_uri]['properties']) > 0):
+        r += "\nProperties commonly used with class %s\n" % class_uri
+        for property_uri in sorted(self.classes[class_uri]['properties'], key=self.classes[class_uri]['properties'].get, reverse=True):
+          r += "  %s (%s occurrences)\n" % (property_uri, self.classes[class_uri]['properties'][property_uri])
+
+
+    r +=  "\n"
+    r +=  "INTERLINKING\n"
+    r +=  "------------\n"
+    
+    r += "The following URI patterns were assumed for this store:\n"
+    for pattern in self.uri_patterns[self.storename]:
+      r += pattern + "\n"
+    
+    r += "\n"  
+    r += "%s (%1.2f%%) triples were deemed to be internal (only referring to resources in this dataset)\n" % (self.internal_triples, 100.0 * self.internal_triples / self.triple_count )  
+    r += "%s (%1.2f%%) triples were deemed to be external (only referring to resources outside this dataset)\n" % (self.external_triples, 100.0 * self.external_triples / self.triple_count )  
+    r += "%s (%1.2f%%) triples were deemed to be interlinking (one resource in this dataset, one outside)\n" % (self.interlinking_triples, 100.0 * self.interlinking_triples / self.triple_count )
+    r += "\n"  
+
+    for storename in self.stores:
+      r +=  "Interlinks to '%s' store\n" % (storename)
+      
+      r +=  "  Found %s triples (%1.2f%%) that potentially referenced data held in '%s' store:\n" % (self.stores[storename]['occurrence'], 100.0 * self.stores[storename]['occurrence'] / self.triple_count,  storename)
+
+      r +=  "\n"
       if len(self.stores[storename]['subjects']) > 0:
-        print "  The following %s (%1.2f%%) resources were confirmed to exist in the '%s' store"% (len(self.stores[storename]['confirmed_subjects']), 100.0 * len(self.stores[storename]['confirmed_subjects']) / len(self.stores[storename]['subjects']), storename)
+        r +=  "  %s references in the subject position, of which %s (%1.2f%%) actually had descriptions in the '%s' store:\n" % (len(self.stores[storename]['subjects']), len(self.stores[storename]['confirmed_subjects']), 100.0 * len(self.stores[storename]['confirmed_subjects']) / len(self.stores[storename]['subjects']), storename)
         for uri in self.stores[storename]['confirmed_subjects']:
-          print "    %s" % uri
+          r +=  "    %s\n" % uri
 
-      print ""
-      print "  %s (%1.2f%%) unique resources found in the object position"% (len(self.stores[storename]['objects']), 100.0 * len(self.stores[storename]['objects']) / self.resource_count)
+      r +=  "\n"
       if len(self.stores[storename]['objects']) > 0:
-        print "  The following %s (%1.2f%%) resources were confirmed to exist in the '%s' store"% (len(self.stores[storename]['confirmed_objects']), 100.0 * len(self.stores[storename]['confirmed_objects']) / len(self.stores[storename]['objects']), storename )
+        r +=  "  %s references in the object position, of which %s (%1.2f%%) actually had descriptions in the '%s' store:\n" % (len(self.stores[storename]['objects']), len(self.stores[storename]['confirmed_objects']), 100.0 * len(self.stores[storename]['confirmed_objects']) / len(self.stores[storename]['objects']), storename)
         for uri in self.stores[storename]['confirmed_objects']:
-          print "    %s" % uri
+          r +=  "    %s\n" % uri
 
-      print ""
+      r +=  "\n"
+    
+    
+    report_out = open('%s' % self.storename, 'w')
+    report_out.write(r)
+    report_out.close()
+    print r
+
 
 def main():
   p = optparse.OptionParser()
