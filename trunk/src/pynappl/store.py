@@ -39,6 +39,7 @@ class Store:
       if password is not None and username is not None:
         self.client.add_credentials(username, password)
       
+      self.store_name = uri  # human-readable name
       if not uri.startswith(("http://", "https://")):
         uri = "http://api.talis.com/stores/" + uri
 
