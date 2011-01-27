@@ -39,7 +39,7 @@ class main:
 		}, None)
 		self.objects = self.builder.get_objects() # keep a reference to all objects, otherwise segfault occurs
 		self.sb = self.builder.get_object("sbrMain")
-		self.sb = self.builder.get_object("sbrMain")
+		#~ self.sb = self.builder.get_object("sbrMain")
 		self.cid_current_store = self.sb.get_context_id("current store")
 		self.cid_current_action = self.sb.get_context_id("current action")
 		self.sb.push(self.cid_current_store, "Not connected to a store")
